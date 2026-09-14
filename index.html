@@ -493,7 +493,7 @@ const COLOR_MAP={rose:"#FFB0C8",butter:"#F2EE5B",sky:"#8AD7FF",mint:"#A8F08C",pi
 const CHARACTERS={cat:1,elephant:1,bear:1,bunny:1,frog:1,owl:1,lion:1,penguin:1,panda:1,unicorn:1,fox:1,jellyfish:1};
 function avatarButtonInner(kind,diameter){
   const src=`avatars/${CHARACTERS[kind]?kind:"cat"}.png`;
-  return `<img src="${src}" alt="${kind}" style="display:block;width:100%;height:100%;object-fit:cover;border-radius:999px;" />`;
+  return `<img src="${src}" alt="${kind}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:135%;height:auto;display:block;" />`;
 }
 
 // ── SVG ICONS (strings) ───────────────────────────────────────────
@@ -1023,7 +1023,7 @@ home(){
           <span id="bloom-spin">${SVG.bloom(26,"#B583E8","#F2EE5B",true)}</span>
           <span class="h-font" style="font-size:24px;color:var(--ink);">Poppins</span>
         </div>
-        <button id="home-settings" title="${t("settingsTitle")}" style="position:relative;overflow:hidden;width:44px;height:44px;border-radius:999px;background:var(--paper-alt);border:var(--border-thin);cursor:pointer;padding:0;flex-shrink:0;">
+        <button id="home-settings" title="${t("settingsTitle")}" style="position:relative;overflow:visible;width:44px;height:44px;border-radius:999px;background:var(--paper-alt);border:var(--border-thin);cursor:pointer;padding:0;flex-shrink:0;">
           ${avatarButtonInner(state.avatar,44)}
         </button>
       </div>
@@ -1277,7 +1277,7 @@ done(){
 
 settings(){
   const avatarSwatches=Object.keys(CHARACTERS).map(key=>`
-    <button class="avatar-swatch" data-avatar="${key}" title="${key}" style="position:relative;overflow:hidden;width:52px;height:52px;border-radius:999px;background:var(--paper-alt);border:${state.avatar===key?"3px solid var(--ink)":"var(--border-thin)"};cursor:pointer;padding:0;box-shadow:0 3px 0 var(--ink);flex-shrink:0;">
+    <button class="avatar-swatch" data-avatar="${key}" title="${key}" style="position:relative;overflow:visible;width:52px;height:52px;border-radius:999px;background:var(--paper-alt);border:${state.avatar===key?"3px solid var(--ink)":"var(--border-thin)"};cursor:pointer;padding:0;box-shadow:0 3px 0 var(--ink);flex-shrink:0;">
       ${avatarButtonInner(key,52)}
     </button>`).join("");
   const langBtn=(code,label)=>`<button class="ui-lang-btn" data-lang="${code}" style="flex:1;padding:12px;border-radius:var(--radius);border:${state.uiLang===code?"var(--border)":"var(--border-thin)"};background:${state.uiLang===code?"var(--butter-soft)":"var(--paper)"};font-family:var(--b-font);font-size:15px;font-weight:700;color:var(--ink);cursor:pointer;box-shadow:${state.uiLang===code?"0 3px 0 var(--ink)":"none"};">${label}</button>`;
@@ -1289,7 +1289,7 @@ settings(){
       </div>
       <div class="card" style="background:var(--pink-soft);">
         <div style="display:flex;align-items:center;gap:14px;">
-          <div style="position:relative;overflow:hidden;width:64px;height:64px;border-radius:999px;background:var(--paper);border:var(--border-thin);flex-shrink:0;">
+          <div style="position:relative;overflow:visible;width:64px;height:64px;border-radius:999px;background:var(--paper);border:var(--border-thin);flex-shrink:0;">
             ${avatarButtonInner(state.avatar,64)}
           </div>
           <div style="flex:1;min-width:0;">
