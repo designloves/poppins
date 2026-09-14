@@ -493,7 +493,7 @@ const COLOR_MAP={rose:"#FFB0C8",butter:"#F2EE5B",sky:"#8AD7FF",mint:"#A8F08C",pi
 const CHARACTERS={cat:1,elephant:1,bear:1,bunny:1,frog:1,owl:1,lion:1,penguin:1,panda:1,unicorn:1,fox:1,jellyfish:1};
 function avatarButtonInner(kind,diameter){
   const src=`avatars/${CHARACTERS[kind]?kind:"cat"}.png`;
-  return `<img src="${src}" alt="${kind}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:158%;height:auto;display:block;" />`;
+  return `<img src="${src}" alt="${kind}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:122%;max-width:122%;height:auto;display:block;" />`;
 }
 
 // ── SVG ICONS (strings) ───────────────────────────────────────────
@@ -1302,7 +1302,7 @@ settings(){
       ${currentUser?`<button id="settings-logout" class="btn btn-tertiary btn-full">${t("logOut")}</button>`:""}
       <div>
         <div class="label-caps" style="margin-bottom:8px;">${t("avatar")}</div>
-        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;">${avatarSwatches}</div>
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:20px;">${avatarSwatches}</div>
       </div>
       <div>
         <div class="label-caps" style="margin-bottom:8px;">${t("appLanguage")}</div>
