@@ -514,8 +514,12 @@ const AVATAR_BUTTON={
 function applyAvatarTint(){
   document.documentElement.style.setProperty("--bg",AVATAR_TINTS[state.avatar]||"#F4F1E8");
 }
+// Bump this whenever an avatar image file changes, so browsers/CDNs
+// that cache images by URL (independent of how often the page reloads)
+// are forced to fetch the new bytes instead of serving stale ones.
+const AVATAR_ASSET_VERSION=2;
 function avatarButtonInner(kind,diameter){
-  const src=`avatars/${CHARACTERS[kind]?kind:"cat"}.png`;
+  const src=`avatars/${CHARACTERS[kind]?kind:"cat"}.png?v=${AVATAR_ASSET_VERSION}`;
   return `<img src="${src}" alt="${kind}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:122%;max-width:122%;height:auto;display:block;" />`;
 }
 
