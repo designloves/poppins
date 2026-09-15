@@ -1234,8 +1234,8 @@ quiz(){
         style="font-size:18px;font-weight:600;background:${inpBg};transition:background 250ms;text-align:${quizFeedback?"center":"left"};"
         ${quizFeedback?"readonly":""}/>
       ${showExitConfirm?`
-      <div style="position:absolute;inset:0;background:rgba(36,31,61,.5);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;">
-        <div class="card-lg" style="max-width:320px;width:100%;text-align:center;">
+      <div style="position:absolute;inset:0;background:rgba(36,31,61,.5);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;">
+        <div class="card-lg" style="width:100%;text-align:center;">
           <p class="b-font" style="font-size:16px;color:var(--ink);line-height:1.5;margin-bottom:18px;">${t("exitGameConfirm")}</p>
           <div style="display:flex;gap:10px;">
             <button id="exit-confirm-yes" class="btn btn-danger" style="flex:1;">${t("exitGame")}</button>
@@ -1484,11 +1484,15 @@ function bindEvents(){
     }
   });
 
-  on("quiz-exit","click",()=>setState({showExitConfirm:true}));
+  on("quiz-exit","click",()=>{document.getElementById("quiz-input")?.blur();setState({showExitConfirm:true});});
   on("exit-confirm-yes","click",()=>{clearScreenFX();navigate("home",{showExitConfirm:false});});
   on("exit-confirm-no","click",()=>setState({showExitConfirm:false}));
   const qi=document.getElementById("quiz-input");
-  if(qi){qi.focus();qi.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();quizSubmit();}});qi.addEventListener("input",e=>{state.quizAnswer=e.target.value;});}
+  if(qi){
+    if(!state.showExitConfirm)qi.focus();
+    qi.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();quizSubmit();}});
+    qi.addEventListener("input",e=>{state.quizAnswer=e.target.value;});
+  }
   on("w5-done","click",quizAdvance);
   document.querySelectorAll("[data-w5]").forEach(el=>{
     el.addEventListener("input",e=>write5Check(parseInt(el.dataset.w5),e.target.value));
