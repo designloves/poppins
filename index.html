@@ -448,7 +448,7 @@ const UI_STRINGS={
     avatar:"Avatar",
     appLanguage:"Appspråk",
     soundEffects:"Ljudeffekter",
-    showPronunciation:"Visa uttal",
+    showPronunciation:"Spela upp ord",
     logOut:"Logga ut",
     logIn:"Logga in",
     madeWith:"Poppins v1 · gjord med",
@@ -491,13 +491,25 @@ const SAMPLE_LISTS=[
 
 const COLOR_MAP={rose:"#FFB0C8",butter:"#F2EE5B",sky:"#8AD7FF",mint:"#A8F08C",pink:"#B583E8"};
 const CHARACTERS={cat:1,elephant:1,bear:1,bunny:1,frog:1,owl:1,lion:1,penguin:1,panda:1,unicorn:1,fox:1,jellyfish:1};
-// A soft tint of each avatar's own color, blended into the app's cream
-// background — subtle enough to keep every card/button (which stay on
-// plain --paper) reading clearly on top of it.
+// A tint of each avatar's own color, blended into the app's cream
+// background — kept light enough to keep every card/button (which stay
+// on plain --paper) reading clearly on top of it.
 const AVATAR_TINTS={
-  cat:"#F5E9E4", elephant:"#E7EDEA", bear:"#F1E5D4", bunny:"#F5EAE4",
-  frog:"#E8ECD9", owl:"#EEE5E8", lion:"#F4E8D3", penguin:"#E2EAE2",
-  panda:"#E4E2DA", unicorn:"#F2EBE9", fox:"#F2E5D3", jellyfish:"#E4EBE9",
+  cat:"#F7DEDE", elephant:"#D4E6EC", bear:"#ECD2B6", bunny:"#F6DFDE",
+  frog:"#D5E5C3", owl:"#E4D4E9", lion:"#F4DCB4", penguin:"#C6DFD8",
+  panda:"#DFDED8", unicorn:"#EEE3EA", fox:"#F0D3B4", jellyfish:"#CCE3EA",
+};
+// A more saturated version of the same color, for the profile/login card.
+const AVATAR_PANEL={
+  cat:"#FCDAE2", elephant:"#CBE6F5", bear:"#ECCAA9", bunny:"#FADBE2",
+  frog:"#CCE4BC", owl:"#E1CDF0", lion:"#F8D7A7", penguin:"#B7DBD9",
+  panda:"#D9D9D8", unicorn:"#F0E2F2", fox:"#F2CBA7", jellyfish:"#BFE2F2",
+};
+// A contrasting accent color for the login button on that card.
+const AVATAR_BUTTON={
+  cat:"#FFB84D", elephant:"#B583E8", bear:"#A8F08C", bunny:"#8AD7FF",
+  frog:"#F2EE5B", owl:"#F2EE5B", lion:"#B583E8", penguin:"#F2EE5B",
+  panda:"#B583E8", unicorn:"#8AD7FF", fox:"#A8F08C", jellyfish:"#FFB0C8",
 };
 function applyAvatarTint(){
   document.documentElement.style.setProperty("--bg",AVATAR_TINTS[state.avatar]||"#F4F1E8");
@@ -1299,7 +1311,7 @@ settings(){
         <h2 class="h-font" style="font-size:30px;color:var(--ink);">${t("settingsTitle")}</h2>
         <button id="settings-close" class="back-btn">${SVG.arrowBack(18,"#241F3D")} ${t("back")}</button>
       </div>
-      <div class="card" style="background:var(--pink-soft);">
+      <div class="card" style="background:${AVATAR_PANEL[state.avatar]||"var(--pink-soft)"};">
         <div style="display:flex;align-items:center;gap:14px;">
           <div style="position:relative;overflow:visible;width:64px;height:64px;border-radius:999px;background:var(--paper);border:var(--border-thin);flex-shrink:0;">
             ${avatarButtonInner(state.avatar,64)}
@@ -1308,7 +1320,7 @@ settings(){
             <div class="h-font" style="font-size:18px;color:var(--ink);">${t("hejThere")}</div>
             <div class="m-font" style="font-size:12px;color:var(--ink-soft);">${esc(currentUser?.email||t("notSignedIn"))}</div>
           </div>
-          ${!currentUser?`<button id="settings-login" class="btn btn-primary" style="flex-shrink:0;padding:10px 16px;font-size:14px;">${t("logIn")}</button>`:""}
+          ${!currentUser?`<button id="settings-login" class="btn" style="background:${AVATAR_BUTTON[state.avatar]||"var(--pink)"};color:var(--ink);box-shadow:0 4px 0 var(--ink);flex-shrink:0;padding:10px 16px;font-size:14px;">${t("logIn")}</button>`:""}
         </div>
       </div>
       ${currentUser?`<button id="settings-logout" class="btn btn-tertiary btn-full">${t("logOut")}</button>`:""}
