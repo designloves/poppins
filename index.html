@@ -15,6 +15,7 @@ html,body{background:var(--bg);height:var(--app-height,100dvh);overflow:hidden;d
 :root{
   --app-height:100dvh;
   --paper:#F4F1E8; --paper-alt:#E9E4D2; --bg:#F4F1E8;
+  --accent:#B583E8; --accent-text:#fff;
   --ink:#241F3D;   --ink-soft:#6B638A;
   --pink:#B583E8;  --pink-soft:#E5D4F7;
   --butter:#F2EE5B;--butter-soft:#FBF8B0;
@@ -54,7 +55,7 @@ html,body{background:var(--bg);height:var(--app-height,100dvh);overflow:hidden;d
   padding:12px 20px;
 }
 .btn:disabled{opacity:0.5;cursor:not-allowed;}
-.btn-primary{background:var(--pink);color:#fff;box-shadow:0 4px 0 var(--ink);}
+.btn-primary{background:var(--accent);color:var(--accent-text);box-shadow:0 4px 0 var(--ink);transition:background 300ms,color 300ms;}
 .btn-secondary{background:var(--butter);color:var(--ink);box-shadow:0 4px 0 var(--ink);}
 .btn-tertiary{background:var(--paper);color:var(--ink);box-shadow:0 4px 0 var(--ink);}
 .btn-danger{background:var(--wrong);color:#fff;box-shadow:0 4px 0 var(--ink);}
@@ -495,27 +496,38 @@ const CHARACTERS={cat:1,elephant:1,bear:1,bunny:1,frog:1,owl:1,lion:1,penguin:1,
 // background — kept light enough to keep every card/button (which stay
 // on plain --paper) reading clearly on top of it.
 const AVATAR_TINTS={
-  cat:"#F7DEDE", elephant:"#D4E6EC", bear:"#ECD2B6", bunny:"#F6DFDE",
+  cat:"#F5EDE6", elephant:"#D4E6EC", bear:"#D2BEA8", bunny:"#F6DFDE",
   frog:"#D5E5C3", owl:"#E4D4E9", lion:"#F4DCB4", penguin:"#C6DFD8",
-  panda:"#DFDED8", unicorn:"#EEE3EA", fox:"#F0D3B4", jellyfish:"#CCE3EA",
+  panda:"#DFDED8", unicorn:"#EEE3EA", fox:"#F0D3B4", jellyfish:"#F0C1D9",
 };
 // A more saturated version of the same color, for the profile/login card.
 const AVATAR_PANEL={
   cat:"#FCDAE2", elephant:"#CBE6F5", bear:"#ECCAA9", bunny:"#FADBE2",
   frog:"#CCE4BC", owl:"#E1CDF0", lion:"#F8D7A7", penguin:"#B7DBD9",
-  panda:"#D9D9D8", unicorn:"#F0E2F2", fox:"#F2CBA7", jellyfish:"#BFE2F2",
+  panda:"#D9D9D8", unicorn:"#F0E2F2", fox:"#F2CBA7", jellyfish:"#F2B1DA",
 };
-// A contrasting accent color for the login button on that card.
+// The avatar's accent color — cascades to every primary button in the
+// app (not just login), via the --accent/--accent-text CSS variables.
 const AVATAR_BUTTON={
-  cat:"#FFB84D", elephant:"#B583E8", bear:"#A8F08C", bunny:"#8AD7FF",
-  frog:"#F2EE5B", owl:"#F2EE5B", lion:"#B583E8", penguin:"#F2EE5B",
-  panda:"#B583E8", unicorn:"#8AD7FF", fox:"#A8F08C", jellyfish:"#FFB0C8",
+  cat:"#FFB84D", elephant:"#B583E8", bear:"#A8F08C", bunny:"#FCA7C0",
+  frog:"#F2EE5B", owl:"#F2EE5B", lion:"#D9691F", penguin:"#F2EE5B",
+  panda:"#7CB342", unicorn:"#8AD7FF", fox:"#FFFFFF", jellyfish:"#E0399B",
 };
+const AVATAR_BUTTON_TEXT={ jellyfish:"#fff" };
 function applyAvatarTint(){
   document.documentElement.style.setProperty("--bg",AVATAR_TINTS[state.avatar]||"#F4F1E8");
+  document.documentElement.style.setProperty("--accent",AVATAR_BUTTON[state.avatar]||"#B583E8");
+  document.documentElement.style.setProperty("--accent-text",AVATAR_BUTTON_TEXT[state.avatar]||"var(--ink)");
 }
+function accentText(){
+  return AVATAR_BUTTON_TEXT[state.avatar]||"#241F3D";
+}
+// Bump this whenever an avatar image file changes, so browsers/CDNs
+// that cache images by URL (independent of how often the page reloads)
+// are forced to fetch the new bytes instead of serving stale ones.
+const AVATAR_ASSET_VERSION=3;
 function avatarButtonInner(kind,diameter){
-  const src=`avatars/${CHARACTERS[kind]?kind:"cat"}.png`;
+  const src=`avatars/${CHARACTERS[kind]?kind:"cat"}.png?v=${AVATAR_ASSET_VERSION}`;
   return `<img src="${src}" alt="${kind}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:122%;max-width:122%;height:auto;display:block;" />`;
 }
 
@@ -990,7 +1002,7 @@ login(){
         <input id="login-email" class="inp" type="email" placeholder="you@email.com" value="${loginEmail}" autocomplete="email"/>
         ${loginErr?`<div style="color:var(--wrong);font-size:14px;">${esc(loginErr)}</div>`:""}
         <button id="login-submit" class="btn btn-primary btn-lg btn-full" ${loginLoading?"disabled":""}>
-          ${SVG.spark(18,"#fff")} ${loginLoading?t("sending"):t("sendMagicLink")}
+          ${SVG.spark(18,accentText())} ${loginLoading?t("sending"):t("sendMagicLink")}
         </button>
         <button id="login-skip" style="background:none;border:none;color:var(--ink-soft);font-size:14px;cursor:pointer;text-decoration:underline;margin-top:12px;">
           ${t("skipTryFirst")}
@@ -1025,7 +1037,7 @@ home(){
         </div>
       </div>
       <div style="margin-top:18px;">
-        <button id="home-start" class="btn btn-primary btn-lg btn-full">${t("startPractice")} ${SVG.arrowRight(18,"#fff")}</button>
+        <button id="home-start" class="btn btn-primary btn-lg btn-full">${t("startPractice")} ${SVG.arrowRight(18,accentText())}</button>
       </div>
     </div>
     <div style="margin-top:auto;display:flex;justify-content:center;gap:10px;">
@@ -1036,7 +1048,7 @@ home(){
       <h2 class="h-font" style="font-size:28px;color:var(--ink);">${t("noWordsYet")}</h2>
       <p class="b-font" style="color:var(--ink-soft);font-size:15px;margin:8px 0 16px;">${t("pickListOrPaste")}</p>
       <div style="display:flex;flex-direction:column;gap:10px;">
-        <button id="home-lists" class="btn btn-primary btn-full">${SVG.books(18,"#fff")} ${t("pickAList")}</button>
+        <button id="home-lists" class="btn btn-primary btn-full">${SVG.books(18,accentText())} ${t("pickAList")}</button>
         <button id="home-new" class="btn btn-tertiary btn-full">${SVG.plus(16,"#241F3D")} ${t("pasteMyOwn")}</button>
       </div>
     </div>`;
@@ -1089,7 +1101,7 @@ lists(){
       <div style="display:flex;flex-direction:column;gap:12px;flex:1;overflow-y:auto;">
         ${items||`<div style="text-align:center;padding:32px 0;color:var(--ink-soft);" class="b-font">${t("noListsYet")}</div>`}
       </div>
-      <button id="lists-add" class="btn btn-primary btn-lg btn-full">${SVG.plus(18,"#fff")} ${t("addNewList")}</button>
+      <button id="lists-add" class="btn btn-primary btn-lg btn-full">${SVG.plus(18,accentText())} ${t("addNewList")}</button>
     </div>`;
 },
 
@@ -1114,7 +1126,7 @@ paste(){
       <div style="display:flex;gap:10px;">
         <button id="paste-cancel" class="btn btn-tertiary">${t("cancel")}</button>
         <button id="paste-parse" class="btn btn-primary" style="flex:1;" ${!pasteText.trim()||pasteLoading?"disabled":""}>
-          ${pasteLoading?t("translating"):`${SVG.spark(16,"#fff")} ${t("sortItOut")}`}
+          ${pasteLoading?t("translating"):`${SVG.spark(16,accentText())} ${t("sortItOut")}`}
         </button>
       </div>
     </div>`;
@@ -1150,7 +1162,7 @@ paste(){
       <div style="display:flex;gap:10px;">
         <button id="paste-back" class="btn btn-tertiary">${t("edit")}</button>
         <button id="paste-save" class="btn btn-primary" style="flex:1;" ${!pasteParsed.length||pasteLoading?"disabled":""}>
-          ${editingListId?t("saveChanges"):t("saveList")} ${SVG.arrowRight(16,"#fff")}
+          ${editingListId?t("saveChanges"):t("saveList")} ${SVG.arrowRight(16,accentText())}
         </button>
       </div>
     </div>`;
@@ -1206,7 +1218,7 @@ quiz(){
         <div style="display:flex;justify-content:center;">${mascotSVG(80,"thinking")}</div>
         <div style="display:flex;flex-direction:column;gap:8px;flex:1;min-height:0;overflow-y:auto;">${rows}</div>
         <button id="w5-done" class="btn btn-primary btn-lg btn-full" ${done<5?"disabled":""}>
-          ${done===5?`${t("gotItKeepGoing")} ${SVG.arrowRight(18,"#fff")}`:t("doneOfFive",{n:done})}
+          ${done===5?`${t("gotItKeepGoing")} ${SVG.arrowRight(18,accentText())}`:t("doneOfFive",{n:done})}
         </button>
       </div>`;
   }
@@ -1294,7 +1306,7 @@ done(){
       </div>
       <div style="display:flex;gap:10px;width:100%;">
         <button id="done-home" class="btn btn-tertiary">${t("home")}</button>
-        <button id="done-again" class="btn btn-primary" style="flex:1;">${t("playAgain")} ${SVG.arrowRight(16,"#fff")}</button>
+        <button id="done-again" class="btn btn-primary" style="flex:1;">${t("playAgain")} ${SVG.arrowRight(16,accentText())}</button>
       </div>
     </div>`;
 },
@@ -1320,7 +1332,7 @@ settings(){
             <div class="h-font" style="font-size:18px;color:var(--ink);">${t("hejThere")}</div>
             <div class="m-font" style="font-size:12px;color:var(--ink-soft);">${esc(currentUser?.email||t("notSignedIn"))}</div>
           </div>
-          ${!currentUser?`<button id="settings-login" class="btn" style="background:${AVATAR_BUTTON[state.avatar]||"var(--pink)"};color:var(--ink);box-shadow:0 4px 0 var(--ink);flex-shrink:0;padding:10px 16px;font-size:14px;">${t("logIn")}</button>`:""}
+          ${!currentUser?`<button id="settings-login" class="btn btn-primary" style="flex-shrink:0;padding:10px 16px;font-size:14px;">${t("logIn")}</button>`:""}
         </div>
       </div>
       ${currentUser?`<button id="settings-logout" class="btn btn-tertiary btn-full">${t("logOut")}</button>`:""}
