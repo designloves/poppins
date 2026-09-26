@@ -18,7 +18,7 @@ test('clicking the mascot shows and then hides the greeting bubble', async ({ pa
 test('start practice navigates away from the home screen', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: /Starta övning|Start practice/ }).click()
-  await expect(page.getByText('Practice setup')).toBeVisible()
-  await page.getByRole('button', { name: /Back/ }).click()
+  await expect(page.getByText('Vilket språk vill du svara på?')).toBeVisible()
+  await page.getByRole('button', { name: /Tillbaka|Back/ }).click()
   await expect(page.getByText('Djur (Animals)')).toBeVisible()
 })

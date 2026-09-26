@@ -16,6 +16,10 @@ const UI_STRINGS = {
     mascotGreeting: "Hi! I'm Poppins. Let's learn some language!",
     settingsTitle: 'Settings',
     editList: 'Edit list',
+    back: 'Back',
+    whichLangAnswer: 'Which language will you answer in?',
+    starting: 'Starting "{name}"',
+    answerIn: 'Answer in {lang}',
   },
   sv: {
     todaysList: 'Dagens lista',
@@ -30,13 +34,32 @@ const UI_STRINGS = {
     mascotGreeting: 'Hej! Jag är Poppins. Nu lär vi oss språk!',
     settingsTitle: 'Inställningar',
     editList: 'Redigera lista',
+    back: 'Tillbaka',
+    whichLangAnswer: 'Vilket språk vill du svara på?',
+    starting: 'Startar "{name}"',
+    answerIn: 'Svara på {lang}',
   },
 } as const
 
 export type UiStringKey = keyof (typeof UI_STRINGS)['en']
 
-export function t(uiLang: UiLang, key: UiStringKey): string {
-  return UI_STRINGS[uiLang][key] ?? UI_STRINGS.en[key]
+export function t(uiLang: UiLang, key: UiStringKey, vars?: Record<string, string>): string {
+  let str: string = UI_STRINGS[uiLang][key] ?? UI_STRINGS.en[key]
+  if (vars) {
+    for (const k in vars) str = str.replaceAll(`{${k}}`, vars[k])
+  }
+  return str
+}
+
+// Language display names, translated per uiLang — e.g. "English" shown
+// as "engelska" when uiLang is "sv".
+const LANG_NAME_TRANSLATIONS: Record<UiLang, Record<string, string>> = {
+  en: { sv: 'Swedish', en: 'English', es: 'Spanish', fr: 'French', de: 'German' },
+  sv: { sv: 'svenska', en: 'engelska', es: 'spanska', fr: 'franska', de: 'tyska' },
+}
+
+export function langName(uiLang: UiLang, code: string): string {
+  return LANG_NAME_TRANSLATIONS[uiLang][code] ?? code
 }
 
 export function wordsCountText(uiLang: UiLang, n: number): string {

@@ -28,7 +28,7 @@ function loadSettings(): Partial<PersistedSettings> {
   }
 }
 
-export type Screen = 'home' | 'practiceSetup' | 'lists' | 'paste' | 'settings'
+export type Screen = 'home' | 'practiceSetup' | 'quiz' | 'lists' | 'paste' | 'settings'
 
 function speak(text: string, lang: string) {
   try {
@@ -52,6 +52,7 @@ export function useAppState() {
   const [activeListId] = useState(SAMPLE_LISTS[0]?.id ?? null)
   const [showGreeting, setShowGreeting] = useState(false)
   const [greetingHiding, setGreetingHiding] = useState(false)
+  const [quizReversed, setQuizReversed] = useState(false)
 
   const greetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const greetHideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -77,6 +78,11 @@ export function useAppState() {
 
   function navigate(next: Screen) {
     setScreen(next)
+  }
+
+  function startQuiz(reversed: boolean) {
+    setQuizReversed(reversed)
+    navigate('quiz')
   }
 
   function addCoins(amount: number) {
@@ -114,5 +120,7 @@ export function useAppState() {
     showGreeting,
     greetingHiding,
     greetMascot,
+    quizReversed,
+    startQuiz,
   }
 }

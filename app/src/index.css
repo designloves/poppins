@@ -50,6 +50,22 @@ body {
   color: var(--ink-soft);
 }
 
+.back-btn {
+  background: none;
+  border: none;
+  box-shadow: none;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px;
+  font-family: var(--b-font);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
 .card-lg {
   background: var(--paper);
   border: var(--border);
@@ -87,6 +103,11 @@ body {
   transition:
     background 300ms,
     color 300ms;
+}
+.btn-secondary {
+  background: var(--butter);
+  color: var(--ink);
+  box-shadow: 0 4px 0 var(--ink);
 }
 .btn-tertiary {
   background: var(--paper);
