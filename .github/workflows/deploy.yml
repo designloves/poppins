@@ -8,6 +8,10 @@ on:
 
 permissions:
   contents: write
+  # pr-preview-action posts a sticky PR comment with the preview link,
+  # which needs this even though the underlying REST endpoint is
+  # "issues/comments" (a PR is an issue under the hood).
+  pull-requests: write
 
 concurrency:
   group: pages-${{ github.ref }}
