@@ -15,7 +15,8 @@ test('shows both answer-direction options for the active list', async ({ page })
 test('choosing an answer direction navigates to the quiz', async ({ page }) => {
   await openPracticeSetup(page)
   await page.getByRole('button', { name: 'Svara på svenska' }).click()
-  await expect(page.getByText('Quiz')).toBeVisible()
+  await expect(page.getByText('1 / 10')).toBeVisible()
+  await expect(page.locator('#quiz-input')).toBeVisible()
 })
 
 test('back returns to home without starting a quiz', async ({ page }) => {

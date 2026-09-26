@@ -14,6 +14,11 @@
   --ink-soft: #6b638a;
   --butter: #f2ee5b;
   --butter-soft: #fbf8b0;
+  --pink: #b583e8;
+  --pink-soft: #e5d4f7;
+  --mint: #a8f08c;
+  --mint-soft: #dff7ce;
+  --correct: #a8f08c;
   --wrong: #f46b7c;
   --radius: 26px;
   --radius-lg: 34px;
@@ -74,6 +79,66 @@ body {
   padding: 20px;
 }
 
+.icon-btn-plain {
+  background: none;
+  border: none;
+  box-shadow: none;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+
+.inp {
+  width: 100%;
+  padding: 14px 18px;
+  border: var(--border);
+  border-radius: var(--radius);
+  font-family: var(--b-font);
+  font-size: 16px;
+  background: var(--paper);
+  color: var(--ink);
+  outline: none;
+  box-shadow: inset 0 2px 0 var(--paper-alt);
+}
+.inp:focus {
+  box-shadow:
+    inset 0 2px 0 var(--paper-alt),
+    0 0 0 3px var(--pink-soft);
+}
+
+.dotbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.quiz-hint {
+  display: contents;
+}
+.dot {
+  height: 10px;
+  border-radius: 6px;
+  border: 2px solid var(--ink);
+  background: var(--paper-alt);
+  transition: all 200ms;
+}
+.dot-current {
+  width: 28px;
+  background: var(--butter);
+}
+.dot-done {
+  width: 10px;
+  background: var(--mint);
+}
+.dot-future {
+  width: 10px;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -112,6 +177,11 @@ body {
 .btn-tertiary {
   background: var(--paper);
   color: var(--ink);
+  box-shadow: 0 4px 0 var(--ink);
+}
+.btn-danger {
+  background: var(--wrong);
+  color: #fff;
   box-shadow: 0 4px 0 var(--ink);
 }
 .btn-lg {
@@ -195,4 +265,337 @@ body {
     transform: scale(0.85);
     opacity: 0;
   }
+}
+
+/* ── Quiz feedback / celebration animations, ported from the legacy
+   app verbatim (values matter: they were tuned by hand). ── */
+@keyframes greta-fall {
+  0% {
+    transform: translateY(-40px) rotate(0deg);
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(820px) rotate(360deg);
+    opacity: 0;
+  }
+}
+@keyframes greta-kiss {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0);
+  }
+  20% {
+    transform: translate(-30px, -30px) scale(1.1) rotate(-8deg);
+  }
+  40% {
+    transform: translate(-58px, -78px) scale(1.25) rotate(-14deg);
+  }
+  55% {
+    transform: translate(-62px, -88px) scale(1.3) rotate(-14deg);
+  }
+  70% {
+    transform: translate(-58px, -78px) scale(1.2) rotate(-10deg);
+  }
+  100% {
+    transform: translate(-20px, -20px) scale(1) rotate(0);
+    opacity: 0.95;
+  }
+}
+@keyframes greta-oops {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  15% {
+    transform: translate(-8px, 2px) rotate(-7deg);
+  }
+  30% {
+    transform: translate(8px, 2px) rotate(7deg);
+  }
+  45% {
+    transform: translate(-7px, 0) rotate(-6deg);
+  }
+  60% {
+    transform: translate(7px, 0) rotate(6deg);
+  }
+  75% {
+    transform: translate(-4px, 0) rotate(-3deg);
+  }
+}
+@keyframes greta-card-correct {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.018);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes greta-card-wrong {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-7px);
+  }
+  40% {
+    transform: translateX(7px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+}
+@keyframes greta-tada {
+  0% {
+    transform: scale(1) rotate(0);
+  }
+  10% {
+    transform: scale(0.92) rotate(-6deg);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: scale(1.18) rotate(8deg);
+  }
+  30%,
+  50%,
+  70% {
+    transform: scale(1.18) rotate(-8deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+@keyframes greta-bigbounce {
+  0% {
+    transform: translate(0, 0) scale(1, 1);
+  }
+  18% {
+    transform: translate(0, -70px) scale(0.94, 1.12);
+  }
+  38% {
+    transform: translate(0, 0) scale(1.12, 0.86);
+  }
+  55% {
+    transform: translate(0, -32px) scale(0.97, 1.06);
+  }
+  72% {
+    transform: translate(0, 0) scale(1.05, 0.95);
+  }
+  100% {
+    transform: translate(0, 0) scale(1, 1);
+  }
+}
+@keyframes greta-cartwheel {
+  0% {
+    transform: translate(0, 0) rotate(0) scale(1);
+  }
+  30% {
+    transform: translate(-30px, -50px) rotate(-200deg) scale(0.9);
+  }
+  60% {
+    transform: translate(-60px, -40px) rotate(-380deg) scale(1);
+  }
+  100% {
+    transform: translate(-20px, -10px) rotate(-360deg) scale(0.95);
+  }
+}
+@keyframes greta-sink {
+  0% {
+    transform: translate(0, 0) scale(1, 1);
+  }
+  20% {
+    transform: translate(0, 6px) scale(1.05, 0.8);
+  }
+  40% {
+    transform: translate(0, -2px) scale(0.95, 1.08);
+  }
+  60% {
+    transform: translate(0, 5px) scale(1.04, 0.86);
+  }
+  100% {
+    transform: translate(0, 0) scale(1, 1);
+  }
+}
+@keyframes greta-headtilt {
+  0% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-22deg) translateX(-4px);
+  }
+  65% {
+    transform: rotate(-22deg) translateX(-4px);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+@keyframes greta-spin-shrink {
+  0% {
+    transform: rotate(0) scale(1);
+  }
+  50% {
+    transform: rotate(-540deg) scale(0.55);
+  }
+  100% {
+    transform: rotate(-720deg) scale(1);
+  }
+}
+@keyframes greta-droplet-fall {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(28px) scale(0.8);
+    opacity: 0;
+  }
+}
+@keyframes greta-glow-pulse {
+  0% {
+    box-shadow: inset 0 0 0 0 rgba(168, 240, 140, 0.55);
+  }
+  40% {
+    box-shadow: inset 0 0 60px 10px rgba(168, 240, 140, 0.45);
+  }
+  100% {
+    box-shadow: inset 0 0 0 0 rgba(168, 240, 140, 0);
+  }
+}
+@keyframes greta-fx-fall {
+  0% {
+    transform: translateY(-8vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(108vh) rotate(560deg);
+    opacity: 0.9;
+  }
+}
+@keyframes greta-heart-rise {
+  0% {
+    transform: translateY(0) scale(0.4);
+    opacity: 0;
+  }
+  18% {
+    transform: translateY(-12vh) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-95vh) scale(0.7) rotate(12deg);
+    opacity: 0;
+  }
+}
+@keyframes greta-firework-spark {
+  0% {
+    transform: translate(0, 0) scale(0);
+    opacity: 0;
+  }
+  25% {
+    transform: translate(calc(var(--dx, 0px) * 0.4), calc(var(--dy, 0px) * 0.4)) scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(0.3);
+    opacity: 0;
+  }
+}
+@keyframes greta-qmark-pop {
+  0% {
+    transform: scale(0) rotate(-20deg);
+    opacity: 0;
+  }
+  35% {
+    transform: scale(1.3) rotate(8deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.15) translateY(-12px) rotate(0);
+    opacity: 0;
+  }
+}
+@keyframes greta-puff {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  40% {
+    transform: scale(1.2);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+@keyframes greta-answer-rise {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes coin-poof {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  45% {
+    transform: scale(1.3) rotate(25deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.9) rotate(45deg);
+    opacity: 0;
+  }
+}
+@keyframes coin-fly-outer {
+  0% {
+    transform: translate(0, 0) scale(0.3);
+    opacity: 0;
+  }
+  14% {
+    transform: translate(0, 0) scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--cdx, 0px), var(--cdy, 0px)) scale(0.5);
+    opacity: 0.2;
+  }
+}
+@keyframes coin-spin-inner {
+  0% {
+    transform: rotateY(0deg);
+  }
+  100% {
+    transform: rotateY(1080deg);
+  }
+}
+.coin-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+.coin-face-back {
+  transform: rotateY(180deg);
 }
