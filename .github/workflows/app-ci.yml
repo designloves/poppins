@@ -1,0 +1,32 @@
+name: App CI
+
+# Quality gate for the in-progress React/TypeScript rewrite under app/.
+# Doesn't deploy anything anywhere — the legacy index.html is still what's
+# live (see deploy.yml). Scoped to app/ changes so unrelated PRs don't
+# pay for it.
+on:
+  push:
+    branches: [main]
+    paths: ['app/**']
+  pull_request:
+    paths: ['app/**']
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run build

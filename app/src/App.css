@@ -1,0 +1,17 @@
+.placeholder {
+  max-width: 480px;
+  margin: 20vh auto;
+  padding: 0 24px;
+  text-align: center;
+  font-family: system-ui, sans-serif;
+}
+
+.placeholder-button {
+  margin-top: 16px;
+  padding: 10px 20px;
+  border: 1.5px solid #241f3d;
+  border-radius: 12px;
+  background: #f4f1e8;
+  font: inherit;
+  cursor: pointer;
+}
