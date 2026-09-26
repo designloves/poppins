@@ -297,11 +297,24 @@ function syncAppHeight(){
 // Some mobile browsers scroll the outer document itself when a focused
 // input is covered by the keyboard, even with html/body set to
 // overflow:hidden — snap it back so only the inner #screen ever scrolls.
+// The browser's own "scroll focused input into view" can also grab
+// #screen itself (it's the nearest scrollable ancestor of any input),
+// shoving the header/card up and out of view even though --app-height
+// has already shrunk the frame to fit above the keyboard — snap that
+// back to the top too.
 function resetOuterScroll(){
   try{
     window.scrollTo(0,0);
     document.documentElement.scrollTop=0;
     document.body.scrollTop=0;
+    // The write-5x screen's stacked inputs (w5-0..w5-4) can legitimately
+    // need #screen's own scroll to reach the lower ones — leave that be.
+    // Every other input (just the single quiz-input) should always sit
+    // flush at the top, so undo the browser's scroll-into-view there.
+    const active=document.activeElement;
+    const inWrite5=active&&active.id&&active.id.indexOf('w5-')===0;
+    const screen=document.getElementById('screen');
+    if(screen&&!inWrite5)screen.scrollTop=0;
   }catch{}
 }
 syncAppHeight();
