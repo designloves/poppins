@@ -1,9 +1,7 @@
-const path = require('path');
-
-const APP_URL = 'file://' + path.resolve(__dirname, '../index.html');
-
+// Served over HTTP by playwright.config.js's webServer (index.html loads
+// its own code as ES modules, which browsers block from file:// origins).
 async function gotoApp(page) {
-  await page.goto(APP_URL);
+  await page.goto('/index.html');
   await page.waitForSelector('#frame');
 }
 
@@ -27,4 +25,4 @@ async function getCoins(page) {
   return page.evaluate(() => state.coins);
 }
 
-module.exports = { APP_URL, gotoApp, startQuiz, currentTarget, getCoins };
+module.exports = { gotoApp, startQuiz, currentTarget, getCoins };
