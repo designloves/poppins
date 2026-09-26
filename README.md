@@ -14,3 +14,16 @@ npm test
 ## Code layout
 
 `index.html` holds the app's state, rendering, and screens. Pure data and logic with no dependency on runtime state — icons/mascot SVGs, i18n strings, avatar/list constants, and small pure helpers (paste-parsing, shuffling, etc.) — live in `js/` as plain ES modules, imported by `index.html`'s own `<script type="module">`.
+
+## Deployment
+
+`.github/workflows/deploy.yml` publishes the site to the `gh-pages` branch:
+
+- pushes to `main` deploy to the site root
+- every pull request gets its own preview at `pr-preview/pr-<number>/`, deployed on open/update and removed on close (via [`rossjrw/pr-preview-action`](https://github.com/rossjrw/pr-preview-action))
+
+Right now the "build" step is a placeholder that just copies the already-deployable files (`index.html`, `js/`, `avatars/`) as-is — this is a pure infra change with no effect on what's served. Once the app moves to Vite, that step becomes `npm run build` and nothing else in the workflow needs to change.
+
+**One-time repo settings this workflow needs** (Settings → …):
+- **Pages → Build and deployment → Source**: "Deploy from a branch", branch `gh-pages` / `(root)`. The `gh-pages` branch doesn't exist until the workflow runs once, so set this after the first successful run on `main`.
+- **Actions → General → Workflow permissions**: "Read and write permissions" — the workflow's own `contents: write` permission is capped by whatever this is set to, so it must allow write for the deploy step to push.

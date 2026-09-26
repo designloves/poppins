@@ -1,0 +1,70 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+permissions:
+  contents: write
+  # pr-preview-action posts a sticky PR comment with the preview link,
+  # which needs this even though the underlying REST endpoint is
+  # "issues/comments" (a PR is an issue under the hood).
+  pull-requests: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-production:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble static site
+        # Placeholder "build": copies today's already-deployable files
+        # as-is, so this workflow is a pure infra change with zero
+        # behavior difference. Once the app moves to Vite, this becomes
+        # `npm run build` (outputting to dist/) and nothing else here
+        # needs to change.
+        run: |
+          mkdir -p dist
+          cp index.html dist/
+          cp -r js dist/js
+          cp -r avatars dist/avatars
+
+      - name: Publish to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: dist
+          # The preview job below keeps PR previews under pr-preview/ on
+          # this same branch — never force-push (it would recreate the
+          # branch as a single new commit and wipe them), and exclude
+          # that path from the normal clean-stale-files pass.
+          force: false
+          clean-exclude: pr-preview/
+
+  preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble static site
+        if: github.event.action != 'closed'
+        run: |
+          mkdir -p dist
+          cp index.html dist/
+          cp -r js dist/js
+          cp -r avatars dist/avatars
+
+      # Deploys dist/ to pr-preview/pr-<number>/ on opened/reopened/
+      # synchronize, and removes that folder on closed — action: auto
+      # (the default) picks the right behavior from the PR event itself.
+      - uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: dist
