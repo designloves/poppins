@@ -30,7 +30,9 @@ Right now the "build" step is a placeholder that just copies the already-deploya
 
 ## New app (in progress)
 
-`app/` is the in-progress React + TypeScript rewrite (Vite, [Base UI](https://base-ui.com/) for unstyled accessible components). It's not live anywhere yet — the root `index.html` is still what's deployed. `.github/workflows/app-ci.yml` lints, format-checks, and builds it on every PR that touches `app/`, as a quality gate while it's being built out.
+`app/` is the in-progress React + TypeScript rewrite (Vite, [Base UI](https://base-ui.com/) for unstyled accessible components). It's not live anywhere yet — the root `index.html` is still what's deployed. `.github/workflows/app-ci.yml` lints, format-checks, builds, and runs its Playwright tests on every PR that touches `app/`, as a quality gate while it's being built out.
+
+Screens ported so far: **Home**. Everything else Home can navigate to (practice setup, lists, paste/edit, settings) is a placeholder proving the navigation is wired, not a real screen yet.
 
 ```
 cd app
@@ -38,5 +40,6 @@ npm install
 npm run dev            # local dev server
 npm run lint            # oxlint
 npm run format:check    # prettier
-npm run build            # tsc -b && vite build
+npm run build           # tsc -b && vite build
+npm test                # playwright, against the built app
 ```
