@@ -1,9 +1,10 @@
 import { Home } from './screens/Home'
 import { Placeholder } from './screens/Placeholder'
+import { PracticeSetup } from './screens/PracticeSetup'
 import { useAppState } from './state/useAppState'
 
 const PLACEHOLDER_TITLES = {
-  practiceSetup: 'Practice setup',
+  quiz: 'Quiz',
   lists: 'My lists',
   paste: 'New / edit list',
   settings: 'Settings',
@@ -12,18 +13,32 @@ const PLACEHOLDER_TITLES = {
 function App() {
   const state = useAppState()
 
-  if (state.screen === 'home') {
+  const home = (
+    <Home
+      avatar={state.avatar}
+      coins={state.coins}
+      coinBump={state.coinBump}
+      uiLang={state.uiLang}
+      activeList={state.activeList}
+      showGreeting={state.showGreeting}
+      greetingHiding={state.greetingHiding}
+      navigate={state.navigate}
+      greetMascot={state.greetMascot}
+    />
+  )
+
+  if (state.screen === 'home') return home
+
+  if (state.screen === 'practiceSetup') {
+    // Same guard the legacy app's own screen renderer has
+    // (screens.practiceSetup redirects home if activeList() is null).
+    if (!state.activeList) return home
     return (
-      <Home
-        avatar={state.avatar}
-        coins={state.coins}
-        coinBump={state.coinBump}
+      <PracticeSetup
+        list={state.activeList}
         uiLang={state.uiLang}
-        activeList={state.activeList}
-        showGreeting={state.showGreeting}
-        greetingHiding={state.greetingHiding}
-        navigate={state.navigate}
-        greetMascot={state.greetMascot}
+        onBack={() => state.navigate('home')}
+        onStart={state.startQuiz}
       />
     )
   }

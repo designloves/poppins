@@ -1,0 +1,25 @@
+import { test, expect } from '@playwright/test'
+
+async function openPracticeSetup(page: import('@playwright/test').Page) {
+  await page.goto('/')
+  await page.getByRole('button', { name: /Starta övning|Start practice/ }).click()
+}
+
+test('shows both answer-direction options for the active list', async ({ page }) => {
+  await openPracticeSetup(page)
+  await expect(page.getByText('Startar "Djur (Animals)"')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Svara på engelska' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Svara på svenska' })).toBeVisible()
+})
+
+test('choosing an answer direction navigates to the quiz', async ({ page }) => {
+  await openPracticeSetup(page)
+  await page.getByRole('button', { name: 'Svara på svenska' }).click()
+  await expect(page.getByText('Quiz')).toBeVisible()
+})
+
+test('back returns to home without starting a quiz', async ({ page }) => {
+  await openPracticeSetup(page)
+  await page.getByRole('button', { name: 'Tillbaka' }).click()
+  await expect(page.getByText('Djur (Animals)')).toBeVisible()
+})

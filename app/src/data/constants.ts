@@ -151,3 +151,24 @@ export const COIN_BUMP_MS = 380
 export function accentText(avatar: AvatarKey): string {
   return AVATAR_BUTTON_TEXT[avatar] || '#241F3D'
 }
+
+export interface LangHelpers {
+  from: string
+  to: string
+  src: (word: Word) => string
+  tgt: (word: Word) => string
+}
+
+// `reversed` swaps which language the player answers in (e.g. a list
+// that's normally "see Swedish, type English" becomes "see English,
+// type Swedish").
+export function langHelpers(list: WordList, reversed: boolean): LangHelpers {
+  const from = reversed ? list.to : list.from
+  const to = reversed ? list.from : list.to
+  return {
+    from,
+    to,
+    src: (word) => word[from] ?? '',
+    tgt: (word) => word[to] ?? '',
+  }
+}
