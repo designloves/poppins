@@ -235,6 +235,18 @@ html,body{background:var(--bg);height:var(--app-height,100dvh);overflow:hidden;d
 }
 @keyframes greta-qmark-pop{0%{transform:scale(0) rotate(-20deg);opacity:0;}35%{transform:scale(1.3) rotate(8deg);opacity:1;}100%{transform:scale(1.15) translateY(-12px) rotate(0);opacity:0;}}
 @keyframes greta-puff{0%{transform:scale(0);opacity:0;}40%{transform:scale(1.2);opacity:.85;}100%{transform:scale(1.6);opacity:0;}}
+@keyframes coin-poof{0%{transform:scale(0) rotate(0deg);opacity:0;}45%{transform:scale(1.3) rotate(25deg);opacity:.9;}100%{transform:scale(1.9) rotate(45deg);opacity:0;}}
+@keyframes coin-fly{
+  0%{transform:translate(0,0) scale(.3) rotate(0deg);opacity:0;}
+  14%{transform:translate(0,0) scale(1.1) rotate(70deg);opacity:1;}
+  100%{transform:translate(var(--cdx,0px),var(--cdy,0px)) scale(.5) rotate(920deg);opacity:.2;}
+}
+@keyframes coin-pouch-bump{
+  0%{transform:scale(1);}
+  35%{transform:scale(1.38);}
+  62%{transform:scale(.92);}
+  100%{transform:scale(1);}
+}
 @keyframes greta-answer-rise{from{transform:translateY(14px);opacity:0;}to{transform:translateY(0);opacity:1;}}
 @keyframes pop-in{from{transform:scale(.92);opacity:0;}to{transform:scale(1);opacity:1;}}
 @keyframes pop-out{from{transform:scale(1);opacity:1;}to{transform:scale(.85);opacity:0;}}
@@ -539,6 +551,11 @@ const SVG={
     const spin=spinning?`style="animation:bloom-spin 4s linear infinite"`:"";
     return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" ${spin}>${petals}<circle cx="16" cy="16" r="3" fill="${c}"/></svg>`;
   },
+  coin:(size)=>`<svg width="${size}" height="${size}" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9.5" fill="#FFD666" stroke="#241F3D" stroke-width="2.2"/>
+    <circle cx="12" cy="12" r="6" fill="none" stroke="#241F3D" stroke-width="1.3" opacity=".35"/>
+    <ellipse cx="9" cy="8.5" rx="2" ry="1.2" fill="#fff" opacity=".55"/>
+  </svg>`,
   spark:(size,color)=>`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>`,
   heart:(size,color)=>`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`,
   check:(size,color,w=4)=>`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
@@ -638,12 +655,14 @@ let state={
   soundOn:false,pronunciationOn:false,
   // ui language
   uiLang:"sv",
+  // coins
+  coins:0,coinBump:false,
 };
 let greetTimer=null, greetHideTimer=null;
 
 // ── SETTINGS PERSISTENCE ─────────────────────────────────────────
 const SETTINGS_KEY="poppins_settings_v1";
-const PERSISTED_KEYS=["avatar","soundOn","pronunciationOn","pair","uiLang"];
+const PERSISTED_KEYS=["avatar","soundOn","pronunciationOn","pair","uiLang","coins"];
 function loadSettings(){
   try{
     const raw=localStorage.getItem(SETTINGS_KEY);
@@ -848,6 +867,7 @@ function quizSubmit(){
     playCorrectSound();
     setState({quizRight:state.quizRight+1,quizFeedback:"correct",quizAnim:anim});
     playScreenFX(SCREEN_FX[Math.floor(Math.random()*SCREEN_FX.length)]);
+    addCoins(COIN_REWARD,document.getElementById("quiz-input"));
     if(state.pronunciationOn)setTimeout(()=>speak(lh.tgt(word),TTS_LOCALE[lh.to]),300);
     setTimeout(quizAdvance,1800);
   }else{
@@ -876,11 +896,66 @@ function write5Check(i,val){
   const lh=langHelpers(list,state.quizReversed);
   const word=state.quizWords[state.quizIdx];
   const target=lh.tgt(word).toLowerCase();
+  const doneBefore=state.quizReps.filter(r=>r.trim().toLowerCase()===target).length;
   state.quizReps[i]=val;
   if(val.trim().toLowerCase()===target){
     setState({quizReps:[...state.quizReps]});
     if(i<4)document.getElementById(`w5-${i+1}`)?.focus();
+    const doneAfter=state.quizReps.filter(r=>r.trim().toLowerCase()===target).length;
+    if(doneBefore<5&&doneAfter===5)addCoins(WRITE5_COINS,document.getElementById(`w5-${i}`));
   }
+}
+
+// ── COINS ─────────────────────────────────────────────────────────
+// A plain correct answer earns COIN_REWARD; finishing the "write it 5
+// times" remediation after a wrong answer earns more, since it took
+// real effort — that's the whole point (rewarding grit, not just luck).
+const COIN_REWARD=1, WRITE5_COINS=3;
+const COIN_FLIGHT_MS=750, COIN_BUMP_MS=380, COIN_ICON_SIZE=26;
+let coinFlightSeq=0;
+function spawnCoinFlight(originEl){
+  const layer=document.getElementById("fx-layer");
+  const pouchIcon=document.getElementById("coin-pouch-icon");
+  const frame=document.getElementById("frame");
+  if(!layer||!pouchIcon||!frame||!originEl)return;
+  const frameRect=frame.getBoundingClientRect();
+  const originRect=originEl.getBoundingClientRect();
+  const pouchRect=pouchIcon.getBoundingClientRect();
+  const ox=originRect.left+originRect.width/2-frameRect.left;
+  const oy=originRect.top+originRect.height/2-frameRect.top;
+  const px=pouchRect.left+pouchRect.width/2-frameRect.left;
+  const py=pouchRect.top+pouchRect.height/2-frameRect.top;
+  const half=COIN_ICON_SIZE/2;
+  const id=coinFlightSeq++;
+
+  const poof=document.createElement("div");
+  poof.id=`coin-poof-${id}`;
+  poof.style.cssText=`position:absolute;left:${ox-half}px;top:${oy-half}px;width:${COIN_ICON_SIZE}px;height:${COIN_ICON_SIZE}px;animation:coin-poof 420ms ease-out both;pointer-events:none;`;
+  poof.innerHTML=SVG.spark(COIN_ICON_SIZE,"#FFD666");
+
+  const coin=document.createElement("div");
+  coin.id=`coin-fly-${id}`;
+  coin.style.cssText=`position:absolute;left:${ox-half}px;top:${oy-half}px;width:${COIN_ICON_SIZE}px;height:${COIN_ICON_SIZE}px;--cdx:${px-ox}px;--cdy:${py-oy}px;animation:coin-fly ${COIN_FLIGHT_MS}ms cubic-bezier(.3,.55,.4,1) both;pointer-events:none;`;
+  coin.innerHTML=SVG.coin(COIN_ICON_SIZE);
+
+  layer.appendChild(poof);
+  layer.appendChild(coin);
+  setTimeout(()=>poof.remove(),450);
+  setTimeout(()=>coin.remove(),COIN_FLIGHT_MS+50);
+}
+function addCoins(amount,originEl){
+  if(originEl)spawnCoinFlight(originEl);
+  const delay=originEl?COIN_FLIGHT_MS:0;
+  setTimeout(()=>{
+    setState({coins:state.coins+amount,coinBump:true});
+    setTimeout(()=>setState({coinBump:false}),COIN_BUMP_MS);
+  },delay);
+}
+function coinPouch(){
+  return `<span style="display:flex;align-items:center;gap:4px;transform-origin:center;animation:${state.coinBump?`coin-pouch-bump ${COIN_BUMP_MS}ms ease-out both`:"none"};">
+    <span id="coin-pouch-icon" style="display:flex;line-height:0;">${SVG.coin(22)}</span>
+    <span class="m-font" style="font-size:16px;font-weight:700;color:var(--ink);">${state.coins}</span>
+  </span>`;
 }
 
 function splitPasteLine(line){
@@ -1059,9 +1134,12 @@ home(){
           <span id="bloom-spin">${SVG.bloom(26,"#B583E8","#F2EE5B",true)}</span>
           <span class="h-font" style="font-size:24px;color:var(--ink);">Poppins</span>
         </div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          ${coinPouch()}
         <button id="home-settings" title="${t("settingsTitle")}" style="position:relative;overflow:visible;width:44px;height:44px;border-radius:999px;background:var(--paper-alt);border:var(--border-thin);cursor:pointer;padding:0;flex-shrink:0;">
           ${avatarButtonInner(state.avatar,44)}
         </button>
+        </div>
       </div>
       <div style="display:flex;justify-content:center;">
         <div style="position:relative;display:inline-block;">
@@ -1208,6 +1286,7 @@ quiz(){
     const done=quizReps.filter((r,_)=>r.trim().toLowerCase()===target.toLowerCase()).length;
     return `
       <div class="screen-pad">
+        <div style="display:flex;justify-content:flex-end;">${coinPouch()}</div>
         <div style="text-align:center;">
           <div class="label-caps">${t("practice")}</div>
           <h2 class="h-font" style="font-size:28px;color:var(--ink);margin:4px 0 0;letter-spacing:-0.02em;">
@@ -1250,7 +1329,8 @@ quiz(){
         <div class="dotbar">${dots}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--m-font);font-size:22px;font-weight:700;color:var(--ink);">
           <span>${quizIdx+1} / ${total}</span>
-          <span style="display:flex;gap:14px;">
+          <span style="display:flex;align-items:center;gap:14px;">
+            ${coinPouch()}
             <span style="display:flex;align-items:center;gap:3px;">${SVG.arrowUp(20,"#241F3D")}${quizRight}</span>
             <span style="display:flex;align-items:center;gap:3px;">${SVG.arrowDown(20,"#241F3D")}${quizWrong}</span>
           </span>
