@@ -9,6 +9,7 @@ export function CoinPouchIcon({ size }: { size: number }) {
   const uid = useId()
   return (
     <span
+      id="coin-pouch-icon"
       style={{ display: 'flex', lineHeight: 0 }}
       dangerouslySetInnerHTML={{ __html: coinPouchMarkup(size, uid) }}
     />

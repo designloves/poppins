@@ -4,14 +4,28 @@ import {
   AVATAR_BUTTON_TEXT,
   AVATAR_TINTS,
   COIN_BUMP_MS,
+  COIN_REWARD,
   SAMPLE_LISTS,
+  WRITE5_COINS,
+  langHelpers,
   type AvatarKey,
+  type Word,
 } from '../data/constants'
 import { TTS_LOCALE, type UiLang } from '../data/i18n'
+import { COIN_FLIGHT_MS, type CoinFlightData } from '../components/CoinFlight'
+import type { ScreenFxKind } from '../components/ScreenFx'
+import type { QuizFeedback } from '../components/FeedbackBurst'
+import { shuffle } from '../lib/shuffle'
+import { playCorrectSound, playWrongSound } from '../lib/sound'
 
 const SETTINGS_KEY = 'poppins_settings_v1'
 const GREETING_DURATION_MS = 2000
 const GREETING_FADE_MS = 180
+const SCREEN_FX_DURATION_MS = 1900
+const ANIM_CORRECT = ['kiss', 'tada', 'bigbounce', 'cartwheel']
+const ANIM_WRONG = ['shake', 'sink', 'headtilt', 'spin']
+const SCREEN_FX_KINDS: ScreenFxKind[] = ['confetti', 'hearts', 'fireworks', 'curls', 'flowers']
+const EMPTY_REPS = ['', '', '', '', '']
 
 interface PersistedSettings {
   avatar: AvatarKey
@@ -28,7 +42,12 @@ function loadSettings(): Partial<PersistedSettings> {
   }
 }
 
-export type Screen = 'home' | 'practiceSetup' | 'quiz' | 'lists' | 'paste' | 'settings'
+export type Screen = 'home' | 'practiceSetup' | 'quiz' | 'done' | 'lists' | 'paste' | 'settings'
+export interface QuizResult {
+  right: number
+  wrong: number
+  total: number
+}
 
 function speak(text: string, lang: string) {
   try {
@@ -52,10 +71,45 @@ export function useAppState() {
   const [activeListId] = useState(SAMPLE_LISTS[0]?.id ?? null)
   const [showGreeting, setShowGreeting] = useState(false)
   const [greetingHiding, setGreetingHiding] = useState(false)
+
+  // Neither has a settings UI yet (that screen isn't ported), so both
+  // just sit at the legacy app's own defaults for now.
+  const [soundOn] = useState(false)
+  const [pronunciationOn] = useState(false)
+
+  // ── Quiz ──
   const [quizReversed, setQuizReversed] = useState(false)
+  const [quizWords, setQuizWords] = useState<Word[]>([])
+  const [quizIdx, setQuizIdx] = useState(0)
+  const [quizRight, setQuizRight] = useState(0)
+  const [quizWrong, setQuizWrong] = useState(0)
+  const [quizAnswer, setQuizAnswer] = useState('')
+  const [quizFeedback, setQuizFeedback] = useState<QuizFeedback>(null)
+  const [quizAnim, setQuizAnim] = useState<string | null>(null)
+  const [quizWriteMode, setQuizWriteMode] = useState(false)
+  const [quizReps, setQuizReps] = useState<string[]>(EMPTY_REPS)
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const [result, setResult] = useState<QuizResult | null>(null)
+  const [screenFx, setScreenFx] = useState<{ kind: ScreenFxKind; id: number } | null>(null)
+  const [coinFlights, setCoinFlights] = useState<CoinFlightData[]>([])
 
   const greetTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const greetHideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const screenFxTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const coinFlightSeq = useRef(0)
+  const screenFxSeq = useRef(0)
+
+  // Quiz state read by callbacks that fire after a delay (the 1800ms
+  // "show feedback, then advance" pause, the 300ms pronunciation delay):
+  // a closure captured when that timeout was scheduled would read
+  // whatever quizRight/quizWrong were BEFORE this same submit's own
+  // setState calls applied, since it's the same render's closure. This
+  // ref is synced after every render commits, so by the time a delayed
+  // callback runs, .current always reflects the latest committed state.
+  const latestQuiz = useRef({ quizIdx, quizRight, quizWrong, quizWords, quizReversed })
+  useEffect(() => {
+    latestQuiz.current = { quizIdx, quizRight, quizWrong, quizWords, quizReversed }
+  })
 
   useEffect(() => {
     const settings: PersistedSettings = { avatar, coins, uiLang }
@@ -80,15 +134,44 @@ export function useAppState() {
     setScreen(next)
   }
 
-  function startQuiz(reversed: boolean) {
-    setQuizReversed(reversed)
-    navigate('quiz')
+  function playScreenFx(kind: ScreenFxKind) {
+    const id = screenFxSeq.current++
+    setScreenFx({ kind, id })
+    clearTimeout(screenFxTimer.current)
+    screenFxTimer.current = setTimeout(() => setScreenFx(null), SCREEN_FX_DURATION_MS)
   }
 
-  function addCoins(amount: number) {
-    setCoins((c) => c + amount)
-    setCoinBump(true)
-    setTimeout(() => setCoinBump(false), COIN_BUMP_MS)
+  function clearScreenFx() {
+    clearTimeout(screenFxTimer.current)
+    setScreenFx(null)
+  }
+
+  function spawnCoinFlight(originEl: HTMLElement) {
+    const frame = document.getElementById('frame')
+    const pouchIcon = document.getElementById('coin-pouch-icon')
+    if (!frame || !pouchIcon) return
+    const frameRect = frame.getBoundingClientRect()
+    const originRect = originEl.getBoundingClientRect()
+    const pouchRect = pouchIcon.getBoundingClientRect()
+    const ox = originRect.left + originRect.width / 2 - frameRect.left
+    const oy = originRect.top + originRect.height / 2 - frameRect.top
+    const px = pouchRect.left + pouchRect.width / 2 - frameRect.left
+    const py = pouchRect.top + pouchRect.height / 2 - frameRect.top
+    const id = coinFlightSeq.current++
+    setCoinFlights((flights) => [...flights, { id, ox, oy, dx: px - ox, dy: py - oy }])
+    setTimeout(() => {
+      setCoinFlights((flights) => flights.filter((f) => f.id !== id))
+    }, COIN_FLIGHT_MS + 50)
+  }
+
+  function addCoins(amount: number, originEl?: HTMLElement | null) {
+    if (originEl) spawnCoinFlight(originEl)
+    const delay = originEl ? COIN_FLIGHT_MS : 0
+    setTimeout(() => {
+      setCoins((c) => c + amount)
+      setCoinBump(true)
+      setTimeout(() => setCoinBump(false), COIN_BUMP_MS)
+    }, delay)
   }
 
   function greetMascot(greeting: string) {
@@ -104,6 +187,122 @@ export function useAppState() {
         setGreetingHiding(false)
       }, GREETING_FADE_MS)
     }, GREETING_DURATION_MS)
+  }
+
+  function startQuiz(reversed: boolean) {
+    if (!activeList) return
+    const words = shuffle(activeList.words)
+    setQuizReversed(reversed)
+    setQuizWords(words)
+    setQuizIdx(0)
+    setQuizRight(0)
+    setQuizWrong(0)
+    setQuizAnswer('')
+    setQuizFeedback(null)
+    setQuizAnim(null)
+    setQuizWriteMode(false)
+    setQuizReps(EMPTY_REPS)
+    navigate('quiz')
+    if (pronunciationOn && words[0]) {
+      const lh = langHelpers(activeList, reversed)
+      speak(lh.src(words[0]), TTS_LOCALE[lh.from] ?? TTS_LOCALE.en)
+    }
+  }
+
+  function advanceQuiz() {
+    const {
+      quizIdx: idx,
+      quizRight: right,
+      quizWrong: wrong,
+      quizWords: words,
+    } = latestQuiz.current
+    if (!activeList) return
+    const nextIdx = idx + 1
+    if (nextIdx >= words.length) {
+      clearScreenFx()
+      setResult({ right, wrong, total: words.length })
+      navigate('done')
+      return
+    }
+    setQuizIdx(nextIdx)
+    setQuizAnswer('')
+    setQuizFeedback(null)
+    setQuizAnim(null)
+    setQuizWriteMode(false)
+    setQuizReps(EMPTY_REPS)
+    if (pronunciationOn) {
+      const lh = langHelpers(activeList, latestQuiz.current.quizReversed)
+      const word = words[nextIdx]
+      if (word) speak(lh.src(word), TTS_LOCALE[lh.from] ?? TTS_LOCALE.en)
+    }
+    requestAnimationFrame(() => document.getElementById('quiz-input')?.focus())
+  }
+
+  function submitQuizAnswer(inputEl: HTMLElement | null) {
+    if (!activeList || quizFeedback) return
+    const answer = quizAnswer.trim()
+    if (!answer) return
+    const lh = langHelpers(activeList, quizReversed)
+    const word = quizWords[quizIdx]
+    const ok = answer.toLowerCase() === lh.tgt(word).toLowerCase()
+    const pool = ok ? ANIM_CORRECT : ANIM_WRONG
+    const anim = pool[Math.floor(Math.random() * pool.length)]
+    if (ok) {
+      if (soundOn) playCorrectSound()
+      setQuizRight((r) => r + 1)
+      setQuizFeedback('correct')
+      setQuizAnim(anim)
+      playScreenFx(SCREEN_FX_KINDS[Math.floor(Math.random() * SCREEN_FX_KINDS.length)])
+      addCoins(COIN_REWARD, inputEl)
+      if (pronunciationOn) {
+        setTimeout(() => speak(lh.tgt(word), TTS_LOCALE[lh.to] ?? TTS_LOCALE.en), 300)
+      }
+      setTimeout(advanceQuiz, 1800)
+    } else {
+      if (soundOn) playWrongSound()
+      setQuizWrong((w) => w + 1)
+      setQuizFeedback('wrong')
+      setQuizAnim(anim)
+      if (pronunciationOn) {
+        setTimeout(() => speak(lh.tgt(word), TTS_LOCALE[lh.to] ?? TTS_LOCALE.en), 300)
+      }
+      setTimeout(() => setQuizWriteMode(true), 1400)
+    }
+  }
+
+  function checkWrite5(i: number, val: string) {
+    if (!activeList) return
+    const lh = langHelpers(activeList, quizReversed)
+    const word = quizWords[quizIdx]
+    const target = lh.tgt(word).toLowerCase()
+    const doneBefore = quizReps.filter((r) => r.trim().toLowerCase() === target).length
+    const next = [...quizReps]
+    next[i] = val
+    setQuizReps(next)
+    if (val.trim().toLowerCase() === target) {
+      if (i < 4) requestAnimationFrame(() => document.getElementById(`w5-${i + 1}`)?.focus())
+      const doneAfter = next.filter((r) => r.trim().toLowerCase() === target).length
+      if (doneBefore < 5 && doneAfter === 5) {
+        addCoins(WRITE5_COINS, document.getElementById(`w5-${i}`))
+      }
+    }
+  }
+
+  function openExitConfirm() {
+    document.getElementById('quiz-input')?.blur()
+    setShowExitConfirm(true)
+  }
+  function closeExitConfirm() {
+    setShowExitConfirm(false)
+  }
+  function confirmExit() {
+    clearScreenFx()
+    setShowExitConfirm(false)
+    navigate('home')
+  }
+
+  function playAgain() {
+    if (activeList) startQuiz(quizReversed)
   }
 
   return {
@@ -122,5 +321,26 @@ export function useAppState() {
     greetMascot,
     quizReversed,
     startQuiz,
+    quizWords,
+    quizIdx,
+    quizRight,
+    quizWrong,
+    quizAnswer,
+    setQuizAnswer,
+    quizFeedback,
+    quizAnim,
+    quizWriteMode,
+    quizReps,
+    showExitConfirm,
+    result,
+    screenFx,
+    coinFlights,
+    submitQuizAnswer,
+    checkWrite5,
+    advanceQuiz,
+    openExitConfirm,
+    closeExitConfirm,
+    confirmExit,
+    playAgain,
   }
 }

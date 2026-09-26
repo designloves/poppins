@@ -32,7 +32,9 @@ Right now the "build" step is a placeholder that just copies the already-deploya
 
 `app/` is the in-progress React + TypeScript rewrite (Vite, [Base UI](https://base-ui.com/) for unstyled accessible components). It's not live anywhere yet — the root `index.html` is still what's deployed. `.github/workflows/app-ci.yml` lints, format-checks, builds, and runs its Playwright tests on every PR that touches `app/`, as a quality gate while it's being built out.
 
-Screens ported so far: **Home**, **Practice setup**. Everything they navigate to beyond that (quiz, lists, paste/edit, settings) is a placeholder proving the navigation is wired, not a real screen yet.
+Screens ported so far: **Home**, **Practice setup**, **Quiz**, **Done** (results). Everything else they navigate to (lists, paste/edit, settings) is a placeholder proving the navigation is wired, not a real screen yet.
+
+Known gap: the mobile keyboard-avoidance / dynamic-viewport-height system the legacy app has (`--app-height`, `resetOuterScroll`, the html/body layout fixes from earlier sessions) hasn't been ported here yet — that's real, separate infrastructure work, not part of any single screen.
 
 ```
 cd app
