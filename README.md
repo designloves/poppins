@@ -27,3 +27,16 @@ Right now the "build" step is a placeholder that just copies the already-deploya
 **One-time repo settings this workflow needs** (Settings → …):
 - **Pages → Build and deployment → Source**: "Deploy from a branch", branch `gh-pages` / `(root)`. The `gh-pages` branch doesn't exist until the workflow runs once, so set this after the first successful run on `main`.
 - **Actions → General → Workflow permissions**: "Read and write permissions" — the workflow's own `contents: write` permission is capped by whatever this is set to, so it must allow write for the deploy step to push.
+
+## New app (in progress)
+
+`app/` is the in-progress React + TypeScript rewrite (Vite, [Base UI](https://base-ui.com/) for unstyled accessible components). It's not live anywhere yet — the root `index.html` is still what's deployed. `.github/workflows/app-ci.yml` lints, format-checks, and builds it on every PR that touches `app/`, as a quality gate while it's being built out.
+
+```
+cd app
+npm install
+npm run dev            # local dev server
+npm run lint            # oxlint
+npm run format:check    # prettier
+npm run build            # tsc -b && vite build
+```
