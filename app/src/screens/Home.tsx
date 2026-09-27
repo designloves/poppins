@@ -19,6 +19,8 @@ interface HomeProps {
   greetingHiding: boolean
   navigate: (screen: Screen) => void
   greetMascot: (greeting: string) => void
+  onNewList: () => void
+  onEditList: () => void
 }
 
 export function Home({
@@ -31,6 +33,8 @@ export function Home({
   greetingHiding,
   navigate,
   greetMascot,
+  onNewList,
+  onEditList,
 }: HomeProps) {
   const accent = accentText(avatar)
 
@@ -99,9 +103,16 @@ export function Home({
       </div>
 
       {activeList ? (
-        <ListCard list={activeList} uiLang={uiLang} accent={accent} navigate={navigate} />
+        <ListCard
+          list={activeList}
+          uiLang={uiLang}
+          accent={accent}
+          navigate={navigate}
+          onEditList={onEditList}
+          onNewList={onNewList}
+        />
       ) : (
-        <EmptyListCard uiLang={uiLang} navigate={navigate} />
+        <EmptyListCard uiLang={uiLang} navigate={navigate} onNewList={onNewList} />
       )}
     </div>
   )
@@ -112,11 +123,15 @@ function ListCard({
   uiLang,
   accent,
   navigate,
+  onEditList,
+  onNewList,
 }: {
   list: WordList
   uiLang: UiLang
   accent: string
   navigate: (screen: Screen) => void
+  onEditList: () => void
+  onNewList: () => void
 }) {
   return (
     <>
@@ -131,7 +146,7 @@ function ListCard({
       >
         <Button
           title={t(uiLang, 'editList')}
-          onClick={() => navigate('paste')}
+          onClick={onEditList}
           style={{
             position: 'absolute',
             top: 15,
@@ -185,7 +200,7 @@ function ListCard({
         <Button className="btn btn-tertiary" onClick={() => navigate('lists')}>
           <Books size={16} color="#241F3D" /> {t(uiLang, 'myLists')}
         </Button>
-        <Button className="btn btn-tertiary" onClick={() => navigate('paste')}>
+        <Button className="btn btn-tertiary" onClick={onNewList}>
           <Plus size={16} color="#241F3D" /> {t(uiLang, 'newList')}
         </Button>
       </div>
@@ -196,9 +211,11 @@ function ListCard({
 function EmptyListCard({
   uiLang,
   navigate,
+  onNewList,
 }: {
   uiLang: UiLang
   navigate: (screen: Screen) => void
+  onNewList: () => void
 }) {
   return (
     <div
@@ -218,7 +235,7 @@ function EmptyListCard({
         <Button className="btn btn-primary btn-full" onClick={() => navigate('lists')}>
           <Books size={18} color="#241F3D" /> {t(uiLang, 'pickAList')}
         </Button>
-        <Button className="btn btn-tertiary btn-full" onClick={() => navigate('paste')}>
+        <Button className="btn btn-tertiary btn-full" onClick={onNewList}>
           <Plus size={16} color="#241F3D" /> {t(uiLang, 'pasteMyOwn')}
         </Button>
       </div>
