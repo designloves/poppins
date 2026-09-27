@@ -267,24 +267,6 @@ export function Trash({ size, color }: IconProps) {
   )
 }
 
-export function Hanger({ size, color }: IconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 3a2 2 0 0 1 2 2c0 .74-.4 1.38-1 1.73V7l7.5 5A2 2 0 0 1 22 13.7V15H2v-1.3a2 2 0 0 1 1.5-1.94L11 7v-.27A2 2 0 0 1 10 5a2 2 0 0 1 2-2Z" />
-      <path d="M2 17h20" />
-    </svg>
-  )
-}
-
 export function Spark({ size, color }: IconProps) {
   return (
     <svg

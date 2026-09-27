@@ -5,8 +5,9 @@ import { accentText, COLOR_MAP } from '../data/constants'
 import type { AvatarKey, WordList } from '../data/constants'
 import { LANGUAGE_CODES, t, wordsCountText } from '../data/i18n'
 import type { UiLang } from '../data/i18n'
-import { ArrowRight, Bloom, Books, Hanger, Pencil, Plus } from '../icons/icons'
+import { ArrowRight, Bloom, Books, Pencil, Plus } from '../icons/icons'
 import { Mascot } from '../icons/Mascot'
+import { Wardrobe } from '../icons/Wardrobe'
 import type { Screen } from '../state/useAppState'
 
 interface HomeProps {
@@ -92,7 +93,7 @@ export function Home({
               justifyContent: 'center',
             }}
           >
-            <Hanger size={20} color="#241F3D" />
+            <Wardrobe size={32} />
           </Button>
           <Button
             title={t(uiLang, 'settingsTitle')}
