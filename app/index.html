@@ -3,7 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <!-- Colors Safari's own chrome (status bar area, bottom toolbar) to
+         match the app background. This is separate from any page CSS —
+         Safari draws its own UI outside the page and only theme-color
+         controls it, not a guess based on sampling page content. -->
+    <meta name="theme-color" content="#f4f1e8" />
     <title>Poppins</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

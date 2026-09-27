@@ -5,6 +5,10 @@
 }
 
 :root {
+  --app-height: 100dvh;
+  --app-width: 100%;
+  --app-top: 0px;
+  --app-left: 0px;
   --paper: #f4f1e8;
   --paper-alt: #e9e4d2;
   --bg: #f4f1e8;
@@ -31,10 +35,89 @@
   --m-font: 'JetBrains Mono', ui-monospace, monospace;
 }
 
+html {
+  /* Always the full, static viewport — not var(--app-height). That's a
+     JS measurement of the *visual* viewport and can legitimately land a
+     little short of the true safe-area-inclusive screen (viewport-fit=cover
+     extends the page under the status bar and home indicator; the JS
+     measurement doesn't always match that exactly). Sizing html/body to
+     it left a gap outside html's box showing the browser's own default
+     background instead of --bg. #frame (below) is what actually needs to
+     track --app-height to lift above the keyboard, and it's pinned via
+     position:fixed, so html/body can stay full-size safely. */
+  height: 100dvh;
+  overflow: hidden;
+}
+
 body {
   background: var(--bg);
-  color-scheme: light dark;
+  /* Light only: the app has no dark theme (all colors are hard-coded
+     light values, no dark variants anywhere in this file). Declaring
+     "light dark" told browsers this page adapts to dark mode when it
+     doesn't, which can make Safari fall back to a system-accent-tinted
+     default for its own chrome (status bar/toolbar) instead of reliably
+     honoring the app's theme-color. */
+  color-scheme: light;
   font-family: var(--b-font);
+  height: 100dvh;
+  overflow: hidden;
+}
+
+#frame {
+  /* Fixed, not relative: pinned straight to the viewport's own corners
+     rather than sized within the document's normal flow. overflow:hidden
+     on html/body stops OUR OWN scrolling, but doesn't stop some mobile
+     browsers from still panning the whole page when a focused input's
+     keyboard opens — position:fixed makes #frame immune to that pan
+     regardless of where the document itself is scrolled to.
+     overflow:hidden here too: a fixed-position element is taken out of
+     the normal document flow, so it is NOT clipped by an ancestor's
+     overflow:hidden (only html/body's own scrolling was ever contained
+     by that) — without its own overflow:hidden, any sub-pixel rounding
+     overflow (routine on mobile Safari) is fully exposed as real,
+     touch-scrollable horizontal/vertical overflow instead of being
+     silently clipped.
+     top/left: var(--app-top/left, 0) rather than a plain 0: position:fixed
+     anchors to the *layout* viewport's origin, but iOS Safari can pan the
+     *visual* viewport away from it independently
+     (visualViewport.offsetTop/offsetLeft) when a focused input needs to
+     clear the keyboard — confirmed on a real device (visualViewport.offsetTop
+     ~414px, #frame rendered at top:-414px; the same happens horizontally).
+     That pan isn't a scroll position, so nothing that resets scroll
+     (including position:fixed's usual scroll-immunity) touches it —
+     --app-top/--app-left (viewportHeight.ts) track it directly instead.
+     width: var(--app-width) rather than right:0 for the same reason on the
+     size side: right:0 assumes the *layout* viewport's width, which can
+     diverge from the *visual* viewport's (zoom/narrowing), overflowing
+     #frame's right edge past what's actually visible. */
+  position: fixed;
+  top: var(--app-top, 0);
+  left: var(--app-left, 0);
+  width: var(--app-width, 100%);
+  height: var(--app-height, 100dvh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#screen {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  background: var(--bg);
+  /* Lets descendants size themselves off #screen's actual (post-flex)
+     height via cqh, which shrinks with --app-height when the keyboard
+     opens. Plain vh units don't: they track the layout viewport, which
+     most mobile browsers leave unchanged when the keyboard opens — so
+     content sized in vh stays full-height and overflows the now-smaller
+     frame instead of shrinking with it. */
+  container-type: size;
+}
+
+.short-viewport .quiz-hint {
+  display: none;
 }
 
 .h-font {

@@ -1,5 +1,6 @@
 import { CoinFlight } from './components/CoinFlight'
 import { ScreenFx } from './components/ScreenFx'
+import { ViewportDebugBadge } from './components/ViewportDebugBadge'
 import { Done } from './screens/Done'
 import { Home } from './screens/Home'
 import { Lists } from './screens/Lists'
@@ -46,7 +47,6 @@ function App() {
     content = (
       <Quiz
         list={state.activeList}
-        avatar={state.avatar}
         uiLang={state.uiLang}
         coins={state.coins}
         coinBump={state.coinBump}
@@ -64,7 +64,6 @@ function App() {
         showExitConfirm={state.showExitConfirm}
         onSubmit={state.submitQuizAnswer}
         onCheckWrite5={state.checkWrite5}
-        onAdvance={state.advanceQuiz}
         onOpenExitConfirm={state.openExitConfirm}
         onCloseExitConfirm={state.closeExitConfirm}
         onConfirmExit={state.confirmExit}
@@ -151,8 +150,8 @@ function App() {
   }
 
   return (
-    <div id="frame" style={{ position: 'relative', minHeight: '100vh' }}>
-      {content}
+    <div id="frame">
+      <div id="screen">{content}</div>
       <div
         id="fx-layer"
         style={{
@@ -168,6 +167,7 @@ function App() {
           <CoinFlight key={flight.id} {...flight} />
         ))}
       </div>
+      {new URLSearchParams(window.location.search).get('debug') === '1' && <ViewportDebugBadge />}
     </div>
   )
 }

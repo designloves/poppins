@@ -48,7 +48,21 @@ export function Home({
         minHeight: '100%',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div
+        id="home-topnav"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          position: 'sticky',
+          top: 0,
+          zIndex: 5,
+          background: 'var(--bg)',
+          paddingTop: 8,
+          paddingBottom: 8,
+          marginTop: -8,
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Bloom size={26} color="#B583E8" center="#F2EE5B" spinning />
           <span className="h-font" style={{ fontSize: 24, color: 'var(--ink)' }}>
@@ -166,13 +180,12 @@ function ListCard({
           <Pencil size={17} color="#241F3D" />
         </Button>
         <div style={{ paddingRight: 46 }}>
-          <div className="label-caps">{t(uiLang, 'todaysList')}</div>
           <h2
             className="h-font"
             style={{
               fontSize: 32,
               color: 'var(--ink)',
-              margin: '4px 0 0',
+              margin: 0,
               letterSpacing: '-0.02em',
               lineHeight: 1,
             }}

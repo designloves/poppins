@@ -4,6 +4,7 @@ import { accentText, COLOR_MAP, type AvatarKey, type WordList } from '../data/co
 import { LANGUAGE_CODES, listsCountText, t, wordsCountText } from '../data/i18n'
 import type { UiLang } from '../data/i18n'
 import { ArrowBack, Bloom, Check, Plus, Trash } from '../icons/icons'
+import { useSwipeBack } from '../lib/useSwipeBack'
 
 interface ListsProps {
   lists: WordList[]
@@ -26,6 +27,7 @@ export function Lists({
   onSelect,
   onDelete,
 }: ListsProps) {
+  useSwipeBack(onBack)
   const accent = accentText(avatar)
 
   function handleDelete(e: MouseEvent, id: string) {
