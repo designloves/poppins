@@ -1,44 +1,9 @@
 # greta
-Greta – the English tutor
+Greta – the English tutor
 
-## Tests
+The app was migrated from a single-file vanilla-JS `index.html` to a React + TypeScript + Vite app. `app/` is the whole frontend now — there's no legacy version left.
 
-End-to-end tests (Playwright) drive the real UI against `index.html`. The app's code loads as ES modules (see below), which browsers block from `file://` origins, so Playwright starts a plain local server (`python3 -m http.server`) automatically — no other build or dev server needed.
-
-```
-npm install
-npx playwright install chromium   # first run only, if not already installed
-npm test
-```
-
-## Code layout
-
-`index.html` holds the app's state, rendering, and screens. Pure data and logic with no dependency on runtime state — icons/mascot SVGs, i18n strings, avatar/list constants, and small pure helpers (paste-parsing, shuffling, etc.) — live in `js/` as plain ES modules, imported by `index.html`'s own `<script type="module">`.
-
-## Deployment
-
-`.github/workflows/deploy.yml` publishes the site to the `gh-pages` branch:
-
-- pushes to `main` deploy to the site root
-- every pull request gets its own preview at `pr-preview/pr-<number>/`, deployed on open/update and removed on close (via [`rossjrw/pr-preview-action`](https://github.com/rossjrw/pr-preview-action))
-
-Right now the "build" step is a placeholder that just copies the already-deployable files (`index.html`, `js/`, `avatars/`) as-is — this is a pure infra change with no effect on what's served. Once the app moves to Vite, that step becomes `npm run build` and nothing else in the workflow needs to change.
-
-**One-time repo settings this workflow needs** (Settings → …):
-- **Pages → Build and deployment → Source**: "Deploy from a branch", branch `gh-pages` / `(root)`. The `gh-pages` branch doesn't exist until the workflow runs once, so set this after the first successful run on `main`.
-- **Actions → General → Workflow permissions**: "Read and write permissions" — the workflow's own `contents: write` permission is capped by whatever this is set to, so it must allow write for the deploy step to push.
-
-## New app (in progress)
-
-`app/` is the in-progress React + TypeScript rewrite (Vite, [Base UI](https://base-ui.com/) for unstyled accessible components). It's not live anywhere yet — the root `index.html` is still what's deployed. `.github/workflows/app-ci.yml` lints, format-checks, builds, and runs its Playwright tests on every PR that touches `app/`, as a quality gate while it's being built out.
-
-All screens are ported: **Home**, **Practice setup**, **Quiz**, **Done** (results), **Lists** (browse/select/delete), **Paste/edit list** (paste word pairs or single words for auto-translation, review, save), **Settings** (avatar, app language, sound/pronunciation toggles), **Login** (magic-link sign-in via Supabase, session persisted across reloads).
-
-Known gaps:
-- The mobile keyboard-avoidance / dynamic-viewport-height system the legacy app has (`--app-height`, `resetOuterScroll`, the html/body layout fixes from earlier sessions) hasn't been ported here yet — that's real, separate infrastructure work, not part of any single screen.
-- Signing in is real (an actual magic-link email, real session persistence), but nothing re-syncs a signed-in user's lists to the server — every screen still reads/writes local state only, same as a guest. Wiring that up (loading a user's saved lists on sign-in, syncing paste/edit/delete to the backend) is separate follow-up work, not part of the Login screen itself.
-
-Final cutover to make `app/` the live site — pointing `deploy.yml`'s build step at `npm run build` instead of copying the legacy files, then removing `index.html`/`js/` — hasn't happened yet.
+## App
 
 ```
 cd app
@@ -49,3 +14,32 @@ npm run format:check    # prettier
 npm run build           # tsc -b && vite build
 npm test                # playwright, against the built app
 ```
+
+React + TypeScript + Vite, with [Base UI](https://base-ui.com/) for unstyled accessible components. All state lives in a single `useAppState()` hook (`app/src/state/useAppState.ts`), passed down as props — no Context or Redux. Screens are components in `app/src/screens/`, switched by a plain if/else chain in `App.tsx` keyed on the current screen. Pure data and logic with no dependency on runtime state (icons, i18n strings, avatar/list constants, paste-parsing, shuffling, etc.) live in `app/src/data/` and `app/src/lib/`.
+
+Sign-in is real — a magic-link email through Supabase, the same project's public auth endpoints the app always used (`app/src/lib/auth.ts`) — but nothing re-syncs a signed-in user's lists to the server yet. Every screen still reads/writes local state only, exactly as a guest would; wiring up server sync for lists is separate follow-up work.
+
+Known gap: the mobile keyboard-avoidance / dynamic-viewport-height system the original app had (`--app-height`, `resetOuterScroll`, html/body layout fixes) hasn't been ported yet — that's real, separate infrastructure work.
+
+## Tests
+
+End-to-end tests (Playwright) drive the real UI against the built app (`app/tests/`, run via `npm test` from `app/`).
+
+## Deployment
+
+`.github/workflows/deploy.yml` publishes `app/`'s build output to the `gh-pages` branch:
+
+- pushes to `main` build the app (`npm ci && npm run build` in `app/`) and deploy it to the site root
+- every pull request that touches `app/**` gets its own preview build at `pr-preview/pr-<number>/`, deployed on open/update and removed on close (via [`rossjrw/pr-preview-action`](https://github.com/rossjrw/pr-preview-action))
+
+The build's asset paths are relative (`base: './'` in `app/vite.config.ts`), so the exact same `app/dist` output works unmodified whether it's deployed at the site root or nested under a PR's own `pr-preview/pr-<n>/` subpath — no per-deployment rebuild needed.
+
+`.github/workflows/app-ci.yml` lints, format-checks, builds, and runs the Playwright tests on every PR that touches `app/**`, as a quality gate independent of deployment.
+
+**One-time repo settings this workflow needs** (Settings → …):
+- **Pages → Build and deployment → Source**: "Deploy from a branch", branch `gh-pages` / `(root)`.
+- **Actions → General → Workflow permissions**: "Read and write permissions" — the workflow's own `contents: write` permission is capped by whatever this is set to, so it must allow write for the deploy step to push.
+
+## Backend
+
+`supabase/functions/greta/` is a Supabase Edge Function backing account sync and word-list translation — see `SETUP.md` for deploying it. It's independent of the frontend rewrite above.

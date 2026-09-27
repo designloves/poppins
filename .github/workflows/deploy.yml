@@ -24,23 +24,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Assemble static site
-        # Placeholder "build": copies today's already-deployable files
-        # as-is, so this workflow is a pure infra change with zero
-        # behavior difference. Once the app moves to Vite, this becomes
-        # `npm run build` (outputting to dist/) and nothing else here
-        # needs to change.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Build app
+        working-directory: app
         run: |
-          mkdir -p dist
-          cp index.html dist/
-          cp -r js dist/js
-          cp -r avatars dist/avatars
+          npm ci
+          npm run build
 
       - name: Publish to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          folder: dist
+          folder: app/dist
           # The preview job below keeps PR previews under pr-preview/ on
           # this same branch — never force-push (it would recreate the
           # branch as a single new commit and wipe them), and exclude
@@ -54,17 +54,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Assemble static site
+      - uses: actions/setup-node@v4
         if: github.event.action != 'closed'
-        run: |
-          mkdir -p dist
-          cp index.html dist/
-          cp -r js dist/js
-          cp -r avatars dist/avatars
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
 
-      # Deploys dist/ to pr-preview/pr-<number>/ on opened/reopened/
+      - name: Build app
+        if: github.event.action != 'closed'
+        working-directory: app
+        run: |
+          npm ci
+          npm run build
+
+      # Deploys app/dist to pr-preview/pr-<number>/ on opened/reopened/
       # synchronize, and removes that folder on closed — action: auto
       # (the default) picks the right behavior from the PR event itself.
+      # The build's relative (base: './') asset paths are what make the
+      # exact same app/dist output work correctly at this nested
+      # subpath as well as at the site root.
       - uses: rossjrw/pr-preview-action@v1
         with:
-          source-dir: dist
+          source-dir: app/dist
