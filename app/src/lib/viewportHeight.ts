@@ -44,6 +44,23 @@ export function initViewportHeight() {
     }
   }
 
+  // iOS Safari animates its own "scroll focused input into view" in sync
+  // with the keyboard's slide-up (which can take ~250-400ms, longer on
+  // slower devices), continuously adjusting scroll position frame by
+  // frame rather than doing it once. A couple of fixed-delay corrections
+  // can win briefly and still lose to a later animation frame that
+  // scrolls again after the last correction ran. Re-assert scrollTop 0
+  // on every animation frame for a window that comfortably outlasts the
+  // keyboard animation instead of guessing at fixed delays.
+  function pinScrollFor(durationMs: number) {
+    const start = performance.now()
+    function tick() {
+      resetOuterScroll()
+      if (performance.now() - start < durationMs) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }
+
   syncAppHeight()
   window.addEventListener('resize', syncAppHeight)
   window.addEventListener('resize', resetOuterScroll)
@@ -58,8 +75,7 @@ export function initViewportHeight() {
       target &&
       (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')
     ) {
-      setTimeout(resetOuterScroll, 50)
-      setTimeout(resetOuterScroll, 300)
+      pinScrollFor(700)
     }
   })
 }
