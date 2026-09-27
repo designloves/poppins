@@ -45,3 +45,39 @@ test('no page-level scroll appears on a normal (keyboard-closed) viewport', asyn
   }))
   expect(scrollHeight).toBeLessThanOrEqual(viewportHeight + 2)
 })
+
+// Regression test: #frame is position:fixed, which takes it out of the
+// normal document flow — an ancestor's overflow:hidden (html/body's) does
+// NOT clip a fixed-position element, only its own overflow does. Without
+// #frame having its own overflow:hidden, any sub-pixel rounding overflow
+// (routine on mobile browsers) is exposed as real, touch-scrollable
+// horizontal overflow instead of being silently clipped.
+test('no horizontal scroll appears on any screen at a real phone width', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+
+  async function assertNoHorizontalOverflow() {
+    const { docWidth, winWidth } = await page.evaluate(() => ({
+      docWidth: document.documentElement.scrollWidth,
+      winWidth: document.documentElement.clientWidth,
+    }))
+    expect(docWidth).toBeLessThanOrEqual(winWidth)
+  }
+
+  await page.goto('/')
+  await assertNoHorizontalOverflow()
+
+  await page.getByRole('button', { name: /Starta övning|Start practice/ }).click()
+  await assertNoHorizontalOverflow()
+
+  await page.getByRole('button', { name: 'Svara på engelska' }).click()
+  await assertNoHorizontalOverflow()
+
+  await page.click('#quiz-exit')
+  await assertNoHorizontalOverflow()
+  await page.click('#exit-confirm-no')
+
+  await page.fill('#quiz-input', '__definitely wrong__')
+  await page.press('#quiz-input', 'Enter')
+  await page.waitForSelector('#w5-0', { timeout: 3000 })
+  await assertNoHorizontalOverflow()
+})

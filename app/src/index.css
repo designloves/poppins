@@ -5,14 +5,7 @@
 }
 
 :root {
-  /* The guaranteed-smallest viewport size (Safari's chrome fully
-     expanded), not 100dvh: dvh can transiently read a little larger than
-     the actually-settled visible area right at page load, which made
-     #frame briefly taller than what's visible and forced a small,
-     spurious scroll on ordinary, keyboard-closed screens. JS
-     (viewportHeight.ts) only overrides this with a smaller, live
-     measurement once it detects a real keyboard open. */
-  --app-height: 100svh;
+  --app-height: 100dvh;
   --paper: #f4f1e8;
   --paper-alt: #e9e4d2;
   --bg: #f4f1e8;
@@ -67,7 +60,14 @@ body {
      on html/body stops OUR OWN scrolling, but doesn't stop some mobile
      browsers from still panning the whole page when a focused input's
      keyboard opens — position:fixed makes #frame immune to that pan
-     regardless of where the document itself is scrolled to. */
+     regardless of where the document itself is scrolled to.
+     overflow:hidden here too: a fixed-position element is taken out of
+     the normal document flow, so it is NOT clipped by an ancestor's
+     overflow:hidden (only html/body's own scrolling was ever contained
+     by that) — without its own overflow:hidden, any sub-pixel rounding
+     overflow (routine on mobile Safari) is fully exposed as real,
+     touch-scrollable horizontal/vertical overflow instead of being
+     silently clipped. */
   position: fixed;
   top: 0;
   left: 0;
@@ -75,6 +75,7 @@ body {
   height: var(--app-height, 100dvh);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 #screen {
