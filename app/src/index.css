@@ -71,6 +71,14 @@ body {
   color: var(--ink);
 }
 
+.card {
+  background: var(--paper);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
 .card-lg {
   background: var(--paper);
   border: var(--border);

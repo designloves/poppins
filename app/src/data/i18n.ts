@@ -34,6 +34,8 @@ const UI_STRINGS = {
     exitGameConfirm: "Quit this round? Your progress on it won't be saved.",
     exitGame: 'Exit',
     returnToGame: 'Return to game',
+    noListsYet: 'No lists yet — add one!',
+    addNewList: 'Add a new list',
   },
   sv: {
     todaysList: 'Dagens lista',
@@ -66,6 +68,8 @@ const UI_STRINGS = {
     exitGameConfirm: 'Avsluta den här omgången? Ditt resultat sparas inte.',
     exitGame: 'Avsluta',
     returnToGame: 'Fortsätt spela',
+    noListsYet: 'Inga listor än — lägg till en!',
+    addNewList: 'Lägg till en ny lista',
   },
 } as const
 
@@ -92,6 +96,10 @@ export function langName(uiLang: UiLang, code: string): string {
 
 export function wordsCountText(uiLang: UiLang, n: number): string {
   return uiLang === 'sv' ? `${n} ord` : `${n} word${n !== 1 ? 's' : ''}`
+}
+
+export function listsCountText(uiLang: UiLang, n: number): string {
+  return uiLang === 'sv' ? `${n} ${n === 1 ? 'lista' : 'listor'}` : `${n} list${n !== 1 ? 's' : ''}`
 }
 
 export const LANGUAGE_CODES: Record<string, string> = {
