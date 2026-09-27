@@ -53,21 +53,16 @@ export function initViewportHeight() {
   // grab #screen itself (it's the nearest scrollable ancestor of any
   // input), shoving the header/card up and out of view even though
   // --app-height has already shrunk the frame to fit above the keyboard
-  // — snap that back to the top too.
+  // — snap that back to the top too. Every screen has exactly one input
+  // (write-5x included, since it moved to a single always-visible field
+  // rather than 5 stacked ones), so it should always sit flush at the top.
   function resetOuterScroll() {
     try {
       window.scrollTo(0, 0)
       document.documentElement.scrollTop = 0
       document.body.scrollTop = 0
-      // The write-5x screen's stacked inputs (w5-0..w5-4) can legitimately
-      // need #screen's own scroll to reach the lower ones — leave that
-      // be. Every other input (just the single quiz-input) should always
-      // sit flush at the top, so undo the browser's scroll-into-view
-      // there.
-      const active = document.activeElement as HTMLElement | null
-      const inWrite5 = !!active?.id && active.id.startsWith('w5-')
       const screen = document.getElementById('screen')
-      if (screen && !inWrite5) screen.scrollTop = 0
+      if (screen) screen.scrollTop = 0
     } catch {
       // ignore
     }

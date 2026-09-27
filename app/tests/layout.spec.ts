@@ -78,6 +78,6 @@ test('no horizontal scroll appears on any screen at a real phone width', async (
 
   await page.fill('#quiz-input', '__definitely wrong__')
   await page.press('#quiz-input', 'Enter')
-  await page.waitForSelector('#w5-0', { timeout: 3000 })
+  await page.getByText('Övning').waitFor({ timeout: 3000 })
   await assertNoHorizontalOverflow()
 })

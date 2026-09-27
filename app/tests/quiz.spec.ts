@@ -53,12 +53,12 @@ test('a wrong answer drops into write-5x, and finishing it awards a bigger coin 
   await page.fill('#quiz-input', '__definitely wrong__')
   await page.press('#quiz-input', 'Enter')
 
-  await expect(page.locator('#w5-0')).toBeVisible({ timeout: 2000 })
-  const target = await page.locator('#w5-0').getAttribute('placeholder')
+  await expect(page.getByText('Övning')).toBeVisible({ timeout: 2000 })
+  const target = await page.locator('#quiz-input').getAttribute('placeholder')
   expect(target).toBeTruthy()
 
   for (let i = 0; i < 5; i++) {
-    await page.fill(`#w5-${i}`, target!)
+    await page.fill('#quiz-input', target!)
   }
 
   await expect(page.locator('#w5-done')).toBeEnabled()
@@ -69,6 +69,31 @@ test('a wrong answer drops into write-5x, and finishing it awards a bigger coin 
     timeout: 2000,
   })
   await expect(page.getByText('2 / 10')).toBeVisible()
+})
+
+test('write-5x uses a single input, with correct entries stacking below as text', async ({
+  page,
+}) => {
+  await startQuiz(page)
+  await page.fill('#quiz-input', '__definitely wrong__')
+  await page.press('#quiz-input', 'Enter')
+  await expect(page.getByText('Övning')).toBeVisible({ timeout: 2000 })
+
+  // Exactly one input on screen — not one per repetition.
+  await expect(page.locator('input')).toHaveCount(1)
+
+  const target = await page.locator('#quiz-input').getAttribute('placeholder')
+  await page.fill('#quiz-input', target!)
+
+  // The correct entry is confirmed into the list below as plain text...
+  await expect(page.getByTestId('write5-rep')).toHaveCount(1)
+  await expect(page.getByTestId('write5-rep').first()).toHaveText(target!)
+  // ...and the (still single) input clears itself, ready for the next one.
+  await expect(page.locator('#quiz-input')).toHaveValue('')
+  await expect(page.locator('input')).toHaveCount(1)
+
+  await page.fill('#quiz-input', target!)
+  await expect(page.getByTestId('write5-rep')).toHaveCount(2)
 })
 
 test('exit confirm can be dismissed, or used to leave the quiz', async ({ page }) => {

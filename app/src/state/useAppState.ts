@@ -36,7 +36,6 @@ const SCREEN_FX_DURATION_MS = 1900
 const ANIM_CORRECT = ['kiss', 'tada', 'bigbounce', 'cartwheel']
 const ANIM_WRONG = ['shake', 'sink', 'headtilt', 'spin']
 const SCREEN_FX_KINDS: ScreenFxKind[] = ['confetti', 'hearts', 'fireworks', 'curls', 'flowers']
-const EMPTY_REPS = ['', '', '', '', '']
 
 interface PersistedSettings {
   avatar: AvatarKey
@@ -133,7 +132,7 @@ export function useAppState() {
   const [quizFeedback, setQuizFeedback] = useState<QuizFeedback>(null)
   const [quizAnim, setQuizAnim] = useState<string | null>(null)
   const [quizWriteMode, setQuizWriteMode] = useState(false)
-  const [quizReps, setQuizReps] = useState<string[]>(EMPTY_REPS)
+  const [quizReps, setQuizReps] = useState<string[]>([])
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const [result, setResult] = useState<QuizResult | null>(null)
   const [screenFx, setScreenFx] = useState<{ kind: ScreenFxKind; id: number } | null>(null)
@@ -247,7 +246,7 @@ export function useAppState() {
     setQuizFeedback(null)
     setQuizAnim(null)
     setQuizWriteMode(false)
-    setQuizReps(EMPTY_REPS)
+    setQuizReps([])
     navigate('quiz')
     if (pronunciationOn && words[0]) {
       const lh = langHelpers(activeList, reversed)
@@ -275,7 +274,7 @@ export function useAppState() {
     setQuizFeedback(null)
     setQuizAnim(null)
     setQuizWriteMode(false)
-    setQuizReps(EMPTY_REPS)
+    setQuizReps([])
     if (pronunciationOn) {
       const lh = langHelpers(activeList, latestQuiz.current.quizReversed)
       const word = words[nextIdx]
@@ -312,24 +311,33 @@ export function useAppState() {
       if (pronunciationOn) {
         setTimeout(() => speak(lh.tgt(word), TTS_LOCALE[lh.to] ?? TTS_LOCALE.en), 300)
       }
-      setTimeout(() => setQuizWriteMode(true), 1400)
+      setTimeout(() => {
+        setQuizWriteMode(true)
+        setQuizAnswer('')
+      }, 1400)
     }
   }
 
-  function checkWrite5(i: number, val: string) {
+  // A single input, checked as-you-type (no Enter needed): once it
+  // exactly matches the target, it's confirmed into quizReps (rendered as
+  // a growing list of completed reps) and the input clears for the next
+  // one, rather than 5 separate stacked inputs. That keeps exactly one
+  // focusable field on screen at all times, at a fixed position, instead
+  // of a tall stack where later inputs can sit below the fold and need
+  // their own scroll to reach — the source of a whole class of real-device
+  // mobile-keyboard bugs the single-input version doesn't have.
+  function checkWrite5(val: string) {
     if (!activeList) return
+    setQuizAnswer(val)
     const lh = langHelpers(activeList, quizReversed)
     const word = quizWords[quizIdx]
     const target = lh.tgt(word).toLowerCase()
-    const doneBefore = quizReps.filter((r) => r.trim().toLowerCase() === target).length
-    const next = [...quizReps]
-    next[i] = val
-    setQuizReps(next)
     if (val.trim().toLowerCase() === target) {
-      if (i < 4) requestAnimationFrame(() => document.getElementById(`w5-${i + 1}`)?.focus())
-      const doneAfter = next.filter((r) => r.trim().toLowerCase() === target).length
-      if (doneBefore < 5 && doneAfter === 5) {
-        addCoins(WRITE5_COINS, document.getElementById(`w5-${i}`))
+      const next = [...quizReps, val]
+      setQuizReps(next)
+      setQuizAnswer('')
+      if (next.length === 5) {
+        addCoins(WRITE5_COINS, document.getElementById('quiz-input'))
       }
     }
   }

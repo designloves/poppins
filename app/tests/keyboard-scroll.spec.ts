@@ -18,15 +18,22 @@ async function startQuiz(page: Page) {
 // can grab #screen directly and shove the header/pouch up out of view,
 // sometimes using the pre-shrink geometry and then re-adjusting through
 // the keyboard's whole slide-up animation. resetOuterScroll() (re-applied
-// every animation frame for 700ms after focus, via pinScrollFor) must
-// undo that for the single-input quiz screen, but must NOT fight the
-// write-5x screen's stacked inputs, which can legitimately need that
-// scroll to reach later fields (w5-0..w5-4).
+// every animation frame for 700ms after focus, via pinScrollFor) undoes
+// that. write-5x uses the same single #quiz-input as normal mode now (not
+// 5 stacked inputs), so this applies uniformly there too — there's no
+// longer a later, below-the-fold input that would legitimately need its
+// own scroll to reach.
 //
 // A real virtual keyboard can't be triggered in a headless browser, so
 // these simulate the same conditions the code reacts to: a
 // keyboard-shrunk --app-height (or a real viewport resize) with #screen
 // already scrolled away from the top, then a focus event.
+
+async function enterWrite5Mode(page: Page) {
+  await page.fill('#quiz-input', '__definitely wrong__')
+  await page.press('#quiz-input', 'Enter')
+  await page.getByText('Övning').waitFor({ timeout: 3000 })
+}
 
 // Regression test for the actual root cause behind "the word card and
 // input scroll off-screen and stay there no matter what": confirmed on a
@@ -85,43 +92,37 @@ test('focusing the quiz input snaps #screen back to the top', async ({ page }) =
   expect(scrollTop).toBe(0)
 })
 
-test('focusing a write-5x input does not force #screen back to the top', async ({ page }) => {
+test('focusing the quiz input snaps #screen back to the top during write-5x too', async ({
+  page,
+}) => {
   await startQuiz(page)
-
-  // Force a wrong answer to enter write-5x mode.
-  await page.fill('#quiz-input', '__definitely wrong__')
-  await page.press('#quiz-input', 'Enter')
-  await page.waitForSelector('#w5-0', { timeout: 3000 })
+  await enterWrite5Mode(page)
 
   await page.evaluate(() => {
+    document.activeElement?.blur()
     document.documentElement.style.setProperty('--app-height', '420px')
     const screen = document.getElementById('screen')!
     screen.style.paddingBottom = '400px'
-    screen.scrollTop = 120 // simulate having scrolled down to reach a later field
+    screen.scrollTop = 300
   })
 
-  await page.focus('#w5-3')
+  await page.focus('#quiz-input')
   await page.waitForTimeout(800)
 
-  // The exact value is up to the browser's own native "scroll focused
-  // element into view" (it can shift a few px with layout changes) — what
-  // matters is that resetOuterScroll() didn't force it back to 0.
   const scrollTop = await page.evaluate(() => document.getElementById('screen')!.scrollTop)
-  expect(scrollTop).toBeGreaterThan(50)
+  expect(scrollTop).toBe(0)
 })
 
 test('the coin pouch stays within the shrunk frame when the keyboard opens during write-5x', async ({
   page,
 }) => {
   await startQuiz(page)
-  await page.fill('#quiz-input', '__definitely wrong__')
-  await page.press('#quiz-input', 'Enter')
-  await page.waitForSelector('#w5-0', { timeout: 3000 })
+  await enterWrite5Mode(page)
 
   await page.evaluate(() => {
     document.documentElement.style.setProperty('--app-height', '420px')
   })
-  await page.focus('#w5-0')
+  await page.focus('#quiz-input')
   await page.waitForTimeout(800)
 
   const pouchBottom = await page.evaluate(
@@ -134,9 +135,7 @@ test('the write-5x coin pouch stays pinned to the top when its own list scrolls'
   page,
 }) => {
   await startQuiz(page)
-  await page.fill('#quiz-input', '__definitely wrong__')
-  await page.press('#quiz-input', 'Enter')
-  await page.waitForSelector('#w5-0', { timeout: 3000 })
+  await enterWrite5Mode(page)
 
   const nav = page.locator('#write5-topnav')
   await expect(nav).toHaveCSS('position', 'sticky')

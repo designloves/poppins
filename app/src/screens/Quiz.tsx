@@ -34,7 +34,7 @@ interface QuizProps {
   quizReps: string[]
   showExitConfirm: boolean
   onSubmit: (inputEl: HTMLElement | null) => void
-  onCheckWrite5: (i: number, val: string) => void
+  onCheckWrite5: (val: string) => void
   onAdvance: () => void
   onOpenExitConfirm: () => void
   onCloseExitConfirm: () => void
@@ -89,8 +89,7 @@ export function Quiz({
 
   if (quizWriteMode) {
     const target = lh.tgt(word)
-    const targetLower = target.toLowerCase()
-    const done = quizReps.filter((r) => r.trim().toLowerCase() === targetLower).length
+    const done = quizReps.length
     const srcLang = langName(uiLang, lh.from)
 
     return (
@@ -143,6 +142,22 @@ export function Quiz({
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <Mascot size={80} mood="thinking" />
         </div>
+        <input
+          id="quiz-input"
+          className="inp"
+          value={quizAnswer}
+          placeholder={target}
+          onChange={(e) => onCheckWrite5(e.target.value)}
+          onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === 'Enter') e.preventDefault()
+          }}
+        />
+        {/* A single, always-in-the-same-place input rather than 5 stacked
+            ones: checked as you type, each correct entry is confirmed
+            into this growing list below instead of its own input box, so
+            there's only ever one focusable field on screen — no later
+            input that can sit below the fold and need its own scroll to
+            reach. */}
         <div
           style={{
             display: 'flex',
@@ -153,44 +168,32 @@ export function Quiz({
             overflowY: 'auto',
           }}
         >
-          {quizReps.map((r, i) => {
-            const ok = r.trim().toLowerCase() === targetLower
-            return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div
-                  style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 999,
-                    border: 'var(--border-thin)',
-                    background: ok ? 'var(--correct)' : 'var(--paper-alt)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: 'var(--m-font)',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: ok ? '#fff' : 'var(--ink)',
-                    flexShrink: 0,
-                  }}
-                >
-                  {ok ? <Check size={14} color="#fff" strokeWidth={4} /> : i + 1}
-                </div>
-                <input
-                  id={`w5-${i}`}
-                  className="inp"
-                  value={r}
-                  disabled={ok}
-                  placeholder={i === 0 ? target : ''}
-                  style={{
-                    background: ok ? 'var(--mint-soft)' : 'var(--paper)',
-                    opacity: ok ? 0.7 : 1,
-                  }}
-                  onChange={(e) => onCheckWrite5(i, e.target.value)}
-                />
+          {quizReps.map((r, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 999,
+                  border: 'var(--border-thin)',
+                  background: 'var(--correct)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Check size={14} color="#fff" strokeWidth={4} />
               </div>
-            )
-          })}
+              <span
+                data-testid="write5-rep"
+                className="b-font"
+                style={{ fontSize: 16, color: 'var(--ink)' }}
+              >
+                {r}
+              </span>
+            </div>
+          ))}
         </div>
         <Button
           id="w5-done"
