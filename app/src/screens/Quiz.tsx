@@ -94,7 +94,7 @@ export function Quiz({
     return (
       <div
         style={{
-          padding: '16px 16px calc(18px + env(safe-area-inset-bottom))',
+          padding: '16px 24px calc(18px + env(safe-area-inset-bottom))',
           display: 'flex',
           flexDirection: 'column',
           gap: 32,
@@ -247,7 +247,7 @@ export function Quiz({
   return (
     <div
       style={{
-        padding: '16px 16px calc(18px + env(safe-area-inset-bottom))',
+        padding: '16px 24px calc(18px + env(safe-area-inset-bottom))',
         display: 'flex',
         flexDirection: 'column',
         gap: 32,
@@ -261,7 +261,8 @@ export function Quiz({
           display: 'flex',
           flexDirection: 'column',
           gap: 12,
-          paddingRight: 28,
+          // 36px close button + 24px gap from the content next to it.
+          paddingRight: 60,
         }}
       >
         <div className="dotbar">
@@ -301,7 +302,7 @@ export function Quiz({
         <Button
           id="quiz-exit"
           className="icon-btn-plain"
-          style={{ position: 'absolute', right: -12, top: '50%', transform: 'translateY(-50%)' }}
+          style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)' }}
           onClick={onOpenExitConfirm}
         >
           <Cross size={20} color="#241F3D" strokeWidth={3} />
