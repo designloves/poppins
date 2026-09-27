@@ -46,7 +46,7 @@ test('a correct answer is scored, earns a coin, and advances to the next word', 
   await expect(page.getByText('2 / 10')).toBeVisible({ timeout: 3000 })
 })
 
-test('a wrong answer drops into write-5x, and finishing it awards a bigger coin bonus', async ({
+test('a wrong answer drops into write-5x, and each correct repetition earns its own coin', async ({
   page,
 }) => {
   await startQuiz(page)
@@ -59,15 +59,17 @@ test('a wrong answer drops into write-5x, and finishing it awards a bigger coin 
 
   for (let i = 0; i < 5; i++) {
     await page.fill('#quiz-input', target!)
+    // A coin lands on this repetition, not just once at the end.
+    await expect(page.locator('[data-testid="coin-count"]').first()).toHaveText(String(i + 1), {
+      timeout: 2000,
+    })
   }
 
   await expect(page.locator('#w5-done')).toBeEnabled()
   await page.click('#w5-done')
 
-  // 1 (none yet, answer was wrong) + 3 (write-5x bonus) = 3
-  await expect(page.locator('[data-testid="coin-count"]').first()).toHaveText('3', {
-    timeout: 2000,
-  })
+  // 0 (the original answer was wrong, no coin) + 5 (one per repetition) = 5
+  await expect(page.locator('[data-testid="coin-count"]').first()).toHaveText('5')
   await expect(page.getByText('2 / 10')).toBeVisible()
 })
 

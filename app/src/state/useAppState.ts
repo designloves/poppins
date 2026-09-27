@@ -6,7 +6,6 @@ import {
   COIN_BUMP_MS,
   COIN_REWARD,
   SAMPLE_LISTS,
-  WRITE5_COINS,
   langHelpers,
   type AvatarKey,
   type Word,
@@ -333,12 +332,11 @@ export function useAppState() {
     const word = quizWords[quizIdx]
     const target = lh.tgt(word).toLowerCase()
     if (val.trim().toLowerCase() === target) {
-      const next = [...quizReps, val]
-      setQuizReps(next)
+      setQuizReps([...quizReps, val])
       setQuizAnswer('')
-      if (next.length === 5) {
-        addCoins(WRITE5_COINS, document.getElementById('quiz-input'))
-      }
+      // Grit gets rewarded the same way a first-try answer does: a coin
+      // for each correct repetition, not just one lump sum at the end.
+      addCoins(COIN_REWARD, document.getElementById('quiz-input'))
     }
   }
 
