@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react'
 
 interface Metrics {
+  innerWidth: number
   innerHeight: number
+  visualViewportWidth: number | null
   visualViewportHeight: number | null
+  visualViewportOffsetLeft: number | null
   visualViewportOffsetTop: number | null
+  appWidth: string
   appHeight: string
+  appLeft: string
   appTop: string
+  frameWidth: number | null
   frameHeight: number | null
+  frameLeft: number | null
   frameTop: number | null
   screenHeight: number | null
   screenScrollTop: number | null
@@ -17,13 +24,21 @@ function readMetrics(): Metrics {
   const frame = document.getElementById('frame')
   const screen = document.getElementById('screen')
   const active = document.activeElement as HTMLElement | null
+  const cs = getComputedStyle(document.documentElement)
   return {
+    innerWidth: window.innerWidth,
     innerHeight: window.innerHeight,
+    visualViewportWidth: window.visualViewport?.width ?? null,
     visualViewportHeight: window.visualViewport?.height ?? null,
+    visualViewportOffsetLeft: window.visualViewport?.offsetLeft ?? null,
     visualViewportOffsetTop: window.visualViewport?.offsetTop ?? null,
-    appHeight: getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
-    appTop: getComputedStyle(document.documentElement).getPropertyValue('--app-top').trim(),
+    appWidth: cs.getPropertyValue('--app-width').trim(),
+    appHeight: cs.getPropertyValue('--app-height').trim(),
+    appLeft: cs.getPropertyValue('--app-left').trim(),
+    appTop: cs.getPropertyValue('--app-top').trim(),
+    frameWidth: frame?.getBoundingClientRect().width ?? null,
     frameHeight: frame?.getBoundingClientRect().height ?? null,
+    frameLeft: frame?.getBoundingClientRect().left ?? null,
     frameTop: frame?.getBoundingClientRect().top ?? null,
     screenHeight: screen?.getBoundingClientRect().height ?? null,
     screenScrollTop: screen?.scrollTop ?? null,
@@ -34,7 +49,7 @@ function readMetrics(): Metrics {
 // Opt-in (?debug=1) live readout of the exact viewport measurements this
 // app's keyboard-avoidance logic reacts to. Screenshotting this at the
 // moment a layout bug is visible on a real device gives an actual number
-// to diagnose from, instead of guessing at what visualViewport/--app-height
+// to diagnose from, instead of guessing at what visualViewport/--app-*
 // were doing — headless testing can't reproduce real iOS Safari's
 // keyboard/chrome timing, so this is the only way to see it directly.
 export function ViewportDebugBadge() {
@@ -76,9 +91,9 @@ export function ViewportDebugBadge() {
         whiteSpace: 'pre',
       }}
     >
-      {`innerHeight=${metrics.innerHeight} vvHeight=${metrics.visualViewportHeight} vvOffsetTop=${metrics.visualViewportOffsetTop}
---app-height=${metrics.appHeight} --app-top=${metrics.appTop} frameH=${metrics.frameHeight?.toFixed(0)} frameTop=${metrics.frameTop?.toFixed(0)}
-screenH=${metrics.screenHeight?.toFixed(0)} screenScrollTop=${metrics.screenScrollTop} active=${metrics.activeElement}`}
+      {`innerW/H=${metrics.innerWidth}/${metrics.innerHeight} vvW/H=${metrics.visualViewportWidth}/${metrics.visualViewportHeight} vvOffsetL/T=${metrics.visualViewportOffsetLeft}/${metrics.visualViewportOffsetTop}
+--app-width/height=${metrics.appWidth}/${metrics.appHeight} --app-left/top=${metrics.appLeft}/${metrics.appTop}
+frameL/T/W/H=${metrics.frameLeft?.toFixed(0)}/${metrics.frameTop?.toFixed(0)}/${metrics.frameWidth?.toFixed(0)}/${metrics.frameHeight?.toFixed(0)} screenH=${metrics.screenHeight?.toFixed(0)} scrollTop=${metrics.screenScrollTop} active=${metrics.activeElement}`}
     </div>
   )
 }

@@ -6,7 +6,9 @@
 
 :root {
   --app-height: 100dvh;
+  --app-width: 100%;
   --app-top: 0px;
+  --app-left: 0px;
   --paper: #f4f1e8;
   --paper-alt: #e9e4d2;
   --bg: #f4f1e8;
@@ -75,18 +77,23 @@ body {
      overflow (routine on mobile Safari) is fully exposed as real,
      touch-scrollable horizontal/vertical overflow instead of being
      silently clipped.
-     top: var(--app-top, 0) rather than a plain 0: position:fixed anchors
-     to the *layout* viewport's origin, but iOS Safari can pan the
-     *visual* viewport away from it independently (visualViewport.offsetTop)
-     when a focused input needs to clear the keyboard — confirmed on a
-     real device (visualViewport.offsetTop ~414px, #frame rendered at
-     top:-414px). That pan isn't a scroll position, so nothing that resets
-     scroll (including position:fixed's usual scroll-immunity) touches it
-     — --app-top (viewportHeight.ts) tracks it directly instead. */
+     top/left: var(--app-top/left, 0) rather than a plain 0: position:fixed
+     anchors to the *layout* viewport's origin, but iOS Safari can pan the
+     *visual* viewport away from it independently
+     (visualViewport.offsetTop/offsetLeft) when a focused input needs to
+     clear the keyboard — confirmed on a real device (visualViewport.offsetTop
+     ~414px, #frame rendered at top:-414px; the same happens horizontally).
+     That pan isn't a scroll position, so nothing that resets scroll
+     (including position:fixed's usual scroll-immunity) touches it —
+     --app-top/--app-left (viewportHeight.ts) track it directly instead.
+     width: var(--app-width) rather than right:0 for the same reason on the
+     size side: right:0 assumes the *layout* viewport's width, which can
+     diverge from the *visual* viewport's (zoom/narrowing), overflowing
+     #frame's right edge past what's actually visible. */
   position: fixed;
   top: var(--app-top, 0);
-  left: 0;
-  right: 0;
+  left: var(--app-left, 0);
+  width: var(--app-width, 100%);
   height: var(--app-height, 100dvh);
   display: flex;
   flex-direction: column;

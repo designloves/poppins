@@ -1,7 +1,7 @@
 // Tracks the visual viewport so the on-screen keyboard shrinks the app
 // instead of covering it, and re-anchors #frame to the visual viewport's
-// actual on-screen position — see syncAppTop() below for why that part
-// is the one that actually matters.
+// actual on-screen size and position — see syncAppPosition() below for
+// why the position part is the one that actually matters.
 //
 // interactive-widget=resizes-content (index.html's meta viewport) is the
 // standardized way to get this for free, but it's Chromium-only (Chrome
@@ -25,22 +25,42 @@ export function initViewportHeight() {
     }
   }
 
+  // iOS Safari can also zoom/narrow the *visual* viewport's width
+  // independently of the layout viewport's — the horizontal counterpart
+  // of the height mismatch --app-height exists for. #frame's width was
+  // previously just left:0/right:0 (i.e. the full layout viewport width),
+  // which overflowed off the right edge of the actual visible window
+  // whenever the two diverged. Sized off visualViewport.width instead, it
+  // can't.
+  function syncAppWidth() {
+    try {
+      const w = window.visualViewport ? window.visualViewport.width : window.innerWidth
+      document.documentElement.style.setProperty('--app-width', `${w}px`)
+    } catch {
+      // ignore
+    }
+  }
+
   // #frame is position:fixed, which anchors it to the *layout* viewport's
-  // origin (top:0 = the layout viewport's top) — but iOS Safari can pan
-  // the *visual* viewport away from the layout viewport when a focused
-  // input needs to clear the keyboard (visualViewport.offsetTop), a
-  // completely separate mechanism from document/element scroll position.
-  // Confirmed directly from a real device: visualViewport.offsetTop read
-  // ~414px while #frame's rendered top was exactly -414px — the pan,
-  // not a leftover scroll, was pushing the whole frame off-screen no
-  // matter what resetOuterScroll() did, since that only ever resets
-  // scroll position, a value this pan never touches. Continuously
-  // re-anchoring #frame's own top to the current offset keeps it pinned
-  // to what's actually visible regardless of that pan.
-  function syncAppTop() {
+  // origin (top:0/left:0 = the layout viewport's own corner) — but iOS
+  // Safari can pan the *visual* viewport away from the layout viewport
+  // when a focused input needs to clear the keyboard
+  // (visualViewport.offsetTop/offsetLeft), a completely separate
+  // mechanism from document/element scroll position. Confirmed directly
+  // from a real device: visualViewport.offsetTop read ~414px while
+  // #frame's rendered top was exactly -414px — the pan, not a leftover
+  // scroll, was pushing the whole frame off-screen no matter what
+  // resetOuterScroll() did, since that only ever resets scroll position, a
+  // value this pan never touches. The same pan can happen horizontally
+  // (offsetLeft), pushing #frame's right edge past the visible window.
+  // Continuously re-anchoring #frame's own top/left to the current offsets
+  // keeps it pinned to what's actually visible regardless of either pan.
+  function syncAppPosition() {
     try {
       const top = window.visualViewport ? window.visualViewport.offsetTop : 0
+      const left = window.visualViewport ? window.visualViewport.offsetLeft : 0
       document.documentElement.style.setProperty('--app-top', `${top}px`)
+      document.documentElement.style.setProperty('--app-left', `${left}px`)
     } catch {
       // ignore
     }
@@ -80,7 +100,7 @@ export function initViewportHeight() {
     const start = performance.now()
     function tick() {
       resetOuterScroll()
-      syncAppTop()
+      syncAppPosition()
       if (performance.now() - start < durationMs) requestAnimationFrame(tick)
     }
     requestAnimationFrame(tick)
@@ -95,18 +115,21 @@ export function initViewportHeight() {
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
       syncAppHeight()
-      syncAppTop()
+      syncAppWidth()
+      syncAppPosition()
     }),
   )
   window.addEventListener('resize', syncAppHeight)
+  window.addEventListener('resize', syncAppWidth)
   window.addEventListener('resize', resetOuterScroll)
-  window.addEventListener('resize', syncAppTop)
+  window.addEventListener('resize', syncAppPosition)
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', syncAppHeight)
+    window.visualViewport.addEventListener('resize', syncAppWidth)
     window.visualViewport.addEventListener('scroll', syncAppHeight)
     window.visualViewport.addEventListener('resize', resetOuterScroll)
-    window.visualViewport.addEventListener('resize', syncAppTop)
-    window.visualViewport.addEventListener('scroll', syncAppTop)
+    window.visualViewport.addEventListener('resize', syncAppPosition)
+    window.visualViewport.addEventListener('scroll', syncAppPosition)
   }
   document.addEventListener('focusin', (e) => {
     const target = e.target as HTMLElement | null

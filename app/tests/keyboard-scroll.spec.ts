@@ -71,6 +71,57 @@ test('#frame stays anchored to the visible window when the visual viewport pans 
   expect(frameTop).toBe(pan)
 })
 
+// Regression test for the horizontal counterpart of the bug above: a
+// device screenshot showed the write-5x input's left edge flush but its
+// right edge (and the coin pouch, meant to hug the right side) cut off
+// past the visible window — the same visual-viewport-pan mechanism,
+// horizontally (visualViewport.offsetLeft), or a width mismatch
+// (visualViewport.width narrower than the layout viewport #frame's old
+// right:0 assumed). #frame now tracks both via --app-left and --app-width
+// instead of left:0/right:0.
+test('#frame stays within the visible window when the visual viewport narrows or shifts horizontally', async ({
+  page,
+}) => {
+  await startQuiz(page)
+  const full = page.viewportSize()!
+
+  const left = 30
+  const width = full.width - 80
+  await page.evaluate(
+    ({ offsetLeft, w }) => {
+      Object.defineProperty(window.visualViewport, 'offsetLeft', {
+        configurable: true,
+        get: () => offsetLeft,
+      })
+      Object.defineProperty(window.visualViewport, 'width', {
+        configurable: true,
+        get: () => w,
+      })
+      window.visualViewport!.dispatchEvent(new Event('resize'))
+    },
+    { offsetLeft: left, w: width },
+  )
+  await page.waitForTimeout(100)
+
+  const { appLeft, appWidth, frameLeft, frameWidth } = await page.evaluate(() => {
+    const cs = getComputedStyle(document.documentElement)
+    const rect = document.getElementById('frame')!.getBoundingClientRect()
+    return {
+      appLeft: cs.getPropertyValue('--app-left').trim(),
+      appWidth: cs.getPropertyValue('--app-width').trim(),
+      frameLeft: rect.left,
+      frameWidth: rect.width,
+    }
+  })
+  expect(appLeft).toBe('30px')
+  expect(appWidth).toBe(`${width}px`)
+  expect(frameLeft).toBe(left)
+  expect(frameWidth).toBe(width)
+  // #frame's right edge must land inside the actual visible width, not
+  // spill past it as it did with the old left:0/right:0.
+  expect(frameLeft + frameWidth).toBeLessThanOrEqual(full.width)
+})
+
 test('focusing the quiz input snaps #screen back to the top', async ({ page }) => {
   await startQuiz(page)
 
