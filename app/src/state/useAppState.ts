@@ -16,6 +16,7 @@ import { TTS_LOCALE, type UiLang } from '../data/i18n'
 import { COIN_FLIGHT_MS, type CoinFlightData } from '../components/CoinFlight'
 import type { ScreenFxKind } from '../components/ScreenFx'
 import type { QuizFeedback } from '../components/FeedbackBurst'
+import { clearSession, initAuth, sendMagicLink, signOutRemote, type CurrentUser } from '../lib/auth'
 import {
   guessPairFromText,
   looksLikeSingleWords,
@@ -100,6 +101,27 @@ export function useAppState() {
   const [pronunciationOn, setPronunciationOn] = useState(
     () => loadSettings().pronunciationOn ?? false,
   )
+
+  // ── Auth / Login ──
+  // Signing in is real (a magic-link email through Supabase, the same
+  // project the legacy app uses), but nothing here re-syncs lists to
+  // the server once signed in — every screen still reads/writes the
+  // local `lists` state only. See the Login screen's PR description.
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
+  const [sessionToken, setSessionToken] = useState<string | null>(null)
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginSent, setLoginSent] = useState(false)
+  const [loginErr, setLoginErr] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
+
+  useEffect(() => {
+    initAuth().then((result) => {
+      if (result) {
+        setCurrentUser(result.user)
+        setSessionToken(result.token)
+      }
+    })
+  }, [])
 
   // ── Quiz ──
   const [quizReversed, setQuizReversed] = useState(false)
@@ -329,6 +351,48 @@ export function useAppState() {
     if (activeList) startQuiz(quizReversed)
   }
 
+  function resetLoginState() {
+    setLoginEmail('')
+    setLoginSent(false)
+    setLoginErr('')
+  }
+
+  function openLogin() {
+    resetLoginState()
+    navigate('login')
+  }
+
+  function skipLogin() {
+    resetLoginState()
+    navigate('home')
+  }
+
+  async function submitLogin() {
+    const email = loginEmail.trim()
+    if (!email.includes('@')) {
+      setLoginErr('Enter a valid email')
+      return
+    }
+    setLoginErr('')
+    setLoginLoading(true)
+    try {
+      await sendMagicLink(email)
+      setLoginSent(true)
+      setLoginLoading(false)
+    } catch (e) {
+      setLoginErr(e instanceof Error ? e.message : 'Could not send link')
+      setLoginLoading(false)
+    }
+  }
+
+  function logout() {
+    if (sessionToken) void signOutRemote(sessionToken)
+    clearSession()
+    setCurrentUser(null)
+    setSessionToken(null)
+    navigate('home')
+  }
+
   function selectList(id: string) {
     setActiveListId(id)
     navigate('home')
@@ -506,6 +570,16 @@ export function useAppState() {
     setSoundOn,
     pronunciationOn,
     setPronunciationOn,
+    currentUser,
+    loginEmail,
+    setLoginEmail,
+    loginSent,
+    loginErr,
+    loginLoading,
+    openLogin,
+    skipLogin,
+    submitLogin,
+    logout,
     lists,
     activeList,
     activeListId,

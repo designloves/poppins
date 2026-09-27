@@ -59,6 +59,14 @@ const UI_STRINGS = {
     logOut: 'Log out',
     logIn: 'Log in',
     madeWith: 'Poppins v1 · made with',
+    loginGreeting: 'Hej!',
+    loginIntro: "I'm Poppins. Drop your email and I'll send a magic link — no passwords, promise.",
+    sending: 'Sending…',
+    sendMagicLink: 'Send magic link',
+    skipTryFirst: 'skip — try Poppins first',
+    checkInbox: 'Check your inbox',
+    magicLinkSent: 'I sent a sparkly link to {email}. Tap it to come on in.',
+    clickedItLetMeIn: 'I clicked it — let me in',
   },
   sv: {
     todaysList: 'Dagens lista',
@@ -116,6 +124,15 @@ const UI_STRINGS = {
     logOut: 'Logga ut',
     logIn: 'Logga in',
     madeWith: 'Poppins v1 · gjord med',
+    loginGreeting: 'Hej!',
+    loginIntro:
+      'Jag är Poppins. Skriv in din e-post så skickar jag en magisk länk — inga lösenord, lovar.',
+    sending: 'Skickar…',
+    sendMagicLink: 'Skicka magisk länk',
+    skipTryFirst: 'hoppa över — prova Poppins först',
+    checkInbox: 'Kolla din inkorg',
+    magicLinkSent: 'Jag skickade en glittrig länk till {email}. Tryck på den för att komma in.',
+    clickedItLetMeIn: 'Jag klickade på den — släpp in mig',
   },
 } as const
 
