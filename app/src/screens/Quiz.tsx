@@ -317,7 +317,7 @@ export function Quiz({
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          padding: 'clamp(12px,4vh,24px) 24px',
+          padding: 'clamp(24px,8vh,48px) 48px',
           background: fbBg,
           transition: 'background 250ms',
           position: 'relative',

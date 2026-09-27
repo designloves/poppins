@@ -59,8 +59,11 @@ test('focusing a write-5x input does not force #screen back to the top', async (
   await page.focus('#w5-3')
   await page.waitForTimeout(400)
 
+  // The exact value is up to the browser's own native "scroll focused
+  // element into view" (it can shift a few px with layout changes) — what
+  // matters is that resetOuterScroll() didn't force it back to 0.
   const scrollTop = await page.evaluate(() => document.getElementById('screen')!.scrollTop)
-  expect(scrollTop).toBe(120)
+  expect(scrollTop).toBeGreaterThan(50)
 })
 
 test('the coin pouch stays within the shrunk frame when the keyboard opens during write-5x', async ({
@@ -81,4 +84,45 @@ test('the coin pouch stays within the shrunk frame when the keyboard opens durin
     () => document.getElementById('coin-pouch-icon')!.getBoundingClientRect().bottom,
   )
   expect(pouchBottom).toBeLessThanOrEqual(420)
+})
+
+// Regression test for "--app-height doesn't adjust to the remaining space,
+// so the word card and input disappear behind the keyboard": unlike the
+// tests above, this doesn't stub --app-height directly — it resizes the
+// real viewport, which fires the actual resize/visualViewport events
+// initViewportHeight() listens for, exercising the real syncAppHeight()
+// code path instead of bypassing it.
+test('a real viewport resize (simulating the keyboard opening) shrinks the frame so the word card and input stay visible', async ({
+  page,
+}) => {
+  await startQuiz(page)
+  const full = page.viewportSize()!
+
+  // A phone-sized keyboard typically leaves 40-55% of the screen visible.
+  const shrunk = Math.round(full.height * 0.5)
+  await page.setViewportSize({ width: full.width, height: shrunk })
+  await page.waitForTimeout(300)
+
+  const appHeight = await page.evaluate(() =>
+    parseInt(getComputedStyle(document.documentElement).getPropertyValue('--app-height')),
+  )
+  expect(appHeight).toBeLessThanOrEqual(shrunk)
+  expect(appHeight).toBeGreaterThan(shrunk - 10)
+
+  const { frameHeight, cardBottom, inputBottom } = await page.evaluate(() => ({
+    frameHeight: document.getElementById('frame')!.getBoundingClientRect().height,
+    cardBottom: document.querySelector('.card-lg')!.getBoundingClientRect().bottom,
+    inputBottom: document.getElementById('quiz-input')!.getBoundingClientRect().bottom,
+  }))
+  expect(frameHeight).toBeLessThanOrEqual(shrunk)
+  expect(cardBottom).toBeLessThanOrEqual(shrunk)
+  expect(inputBottom).toBeLessThanOrEqual(shrunk)
+
+  await page.focus('#quiz-input')
+  await page.waitForTimeout(400)
+  const inputBottomAfterFocus = await page.evaluate(
+    () => document.getElementById('quiz-input')!.getBoundingClientRect().bottom,
+  )
+  expect(inputBottomAfterFocus).toBeLessThanOrEqual(shrunk)
+  expect(inputBottomAfterFocus).toBeGreaterThan(0)
 })

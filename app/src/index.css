@@ -46,10 +46,19 @@ body {
 }
 
 #frame {
+  /* Fixed, not relative: pinned straight to the viewport's own corners
+     rather than sized within the document's normal flow. overflow:hidden
+     on html/body stops OUR OWN scrolling, but doesn't stop some mobile
+     browsers from still panning the whole page when a focused input's
+     keyboard opens — position:fixed makes #frame immune to that pan
+     regardless of where the document itself is scrolled to. */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   height: var(--app-height, 100dvh);
   display: flex;
   flex-direction: column;
-  position: relative;
 }
 
 #screen {
