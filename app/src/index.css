@@ -5,7 +5,6 @@
 }
 
 :root {
-  --app-height: 100dvh;
   --paper: #f4f1e8;
   --paper-alt: #e9e4d2;
   --bg: #f4f1e8;
@@ -33,15 +32,15 @@
 }
 
 html {
-  /* Always the full, static viewport — not var(--app-height). That's a
-     JS measurement of the *visual* viewport and can legitimately land a
-     little short of the true safe-area-inclusive screen (viewport-fit=cover
-     extends the page under the status bar and home indicator; the JS
-     measurement doesn't always match that exactly). Sizing html/body to
-     it left a gap outside html's box showing the browser's own default
-     background instead of --bg. #frame (below) is what actually needs to
-     track --app-height to lift above the keyboard, and it's pinned via
-     position:fixed, so html/body can stay full-size safely. */
+  /* interactive-widget=resizes-content (index.html's meta viewport) makes
+     the browser itself shrink the *viewport* dvh is defined against when
+     the on-screen keyboard opens, on any engine that honors it (Safari
+     17.4+, Chrome for Android 108+) — so 100dvh already excludes the
+     keyboard without any JS measuring or correcting it. That's more
+     reliable across browsers than a hand-rolled visualViewport-based
+     height plus scroll-correction hack, which fights each engine's own
+     (and differently-timed) native "scroll focused input into view"
+     behavior instead of just not needing to. */
   height: 100dvh;
   overflow: hidden;
 }
@@ -55,17 +54,7 @@ body {
 }
 
 #frame {
-  /* Fixed, not relative: pinned straight to the viewport's own corners
-     rather than sized within the document's normal flow. overflow:hidden
-     on html/body stops OUR OWN scrolling, but doesn't stop some mobile
-     browsers from still panning the whole page when a focused input's
-     keyboard opens — position:fixed makes #frame immune to that pan
-     regardless of where the document itself is scrolled to. */
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--app-height, 100dvh);
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -77,17 +66,17 @@ body {
   overflow-x: hidden;
   position: relative;
   background: var(--bg);
-  /* Lets descendants size themselves off #screen's actual (post-flex)
-     height via cqh, which shrinks with --app-height when the keyboard
-     opens. Plain vh units don't: they track the layout viewport, which
-     most mobile browsers leave unchanged when the keyboard opens — so
-     content sized in vh stays full-height and overflows the now-smaller
-     frame instead of shrinking with it. */
+  /* Lets descendants size themselves off #screen's actual height via cqh
+     instead of vh: vh is defined against the viewport as a whole, cqh
+     against this specific container, and only the latter is guaranteed to
+     match what #screen's own flex-computed height actually shrinks to. */
   container-type: size;
 }
 
-.short-viewport .quiz-hint {
-  display: none;
+@container (max-height: 560px) {
+  .quiz-hint {
+    display: none;
+  }
 }
 
 .h-font {

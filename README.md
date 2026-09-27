@@ -19,7 +19,7 @@ React + TypeScript + Vite, with [Base UI](https://base-ui.com/) for unstyled acc
 
 Sign-in is real — a magic-link email through Supabase, the same project's public auth endpoints the app always used (`app/src/lib/auth.ts`) — but nothing re-syncs a signed-in user's lists to the server yet. Every screen still reads/writes local state only, exactly as a guest would; wiring up server sync for lists is separate follow-up work.
 
-The app tracks the visual viewport (`app/src/lib/viewportHeight.ts`) so the on-screen keyboard shrinks `#frame` to fit above it instead of covering it, and corrects mobile browsers' own "scroll the focused input into view" behavior where it fights with that shrink — without this, content above a focused input (like the coin pouch during the write-5x remediation) can end up scrolled out of view exactly when it matters.
+The on-screen keyboard shrinking `#frame` to fit above it (instead of covering it) relies entirely on the standard viewport mechanism: `index.html`'s meta viewport declares `interactive-widget=resizes-content`, which makes browsers that honor it (Safari 17.4+, Chrome for Android 108+) shrink the viewport `100dvh` is defined against when the keyboard opens. `#screen` is a CSS size container so the word card can size its own padding/font off `cqh` (its real, shrunk height) rather than `vh` (the viewport as a whole) — otherwise the frame shrinks but its content doesn't, and overflows it.
 
 ## Tests
 
