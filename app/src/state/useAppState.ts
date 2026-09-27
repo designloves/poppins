@@ -319,7 +319,7 @@ export function useAppState() {
 
   // A single input, checked as-you-type (no Enter needed): once it
   // exactly matches the target, it's confirmed into quizReps (rendered as
-  // a growing list of completed reps) and the input clears for the next
+  // a mascot filling in per repetition) and the input clears for the next
   // one, rather than 5 separate stacked inputs. That keeps exactly one
   // focusable field on screen at all times, at a fixed position, instead
   // of a tall stack where later inputs can sit below the fold and need
@@ -332,11 +332,16 @@ export function useAppState() {
     const word = quizWords[quizIdx]
     const target = lh.tgt(word).toLowerCase()
     if (val.trim().toLowerCase() === target) {
-      setQuizReps([...quizReps, val])
+      const next = [...quizReps, val]
+      setQuizReps(next)
       setQuizAnswer('')
       // Grit gets rewarded the same way a first-try answer does: a coin
       // for each correct repetition, not just one lump sum at the end.
       addCoins(COIN_REWARD, document.getElementById('quiz-input'))
+      // Auto-advances once all 5 are done, same as a correct answer in
+      // normal mode — no separate "keep going" button to tap once the
+      // mascots already show it's finished.
+      if (next.length === 5) setTimeout(advanceQuiz, 1800)
     }
   }
 

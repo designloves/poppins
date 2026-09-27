@@ -2,17 +2,11 @@ import type { KeyboardEvent } from 'react'
 import { Button } from '@base-ui/react/button'
 import { CoinPouch } from '../components/CoinPouch'
 import { FeedbackBurst } from '../components/FeedbackBurst'
-import {
-  accentText,
-  langHelpers,
-  type AvatarKey,
-  type Word,
-  type WordList,
-} from '../data/constants'
+import { langHelpers, type Word, type WordList } from '../data/constants'
 import { langName, t, type UiLang } from '../data/i18n'
 import { animName } from '../lib/animName'
 import { useSwipeBack } from '../lib/useSwipeBack'
-import { ArrowDown, ArrowRight, ArrowUp, Cross } from '../icons/icons'
+import { ArrowDown, ArrowUp, Cross } from '../icons/icons'
 import { Mascot, type MascotMood } from '../icons/Mascot'
 
 // One mood per write-5x repetition slot, so the 5 filled-in mascots look
@@ -21,7 +15,6 @@ const WRITE5_MOODS: MascotMood[] = ['happy', 'cheer', 'proud', 'happy', 'cheer']
 
 interface QuizProps {
   list: WordList
-  avatar: AvatarKey
   uiLang: UiLang
   coins: number
   coinBump: boolean
@@ -39,7 +32,6 @@ interface QuizProps {
   showExitConfirm: boolean
   onSubmit: (inputEl: HTMLElement | null) => void
   onCheckWrite5: (val: string) => void
-  onAdvance: () => void
   onOpenExitConfirm: () => void
   onCloseExitConfirm: () => void
   onConfirmExit: () => void
@@ -62,7 +54,6 @@ function interpolateNode(template: string, key: string, node: React.ReactNode): 
 
 export function Quiz({
   list,
-  avatar,
   uiLang,
   coins,
   coinBump,
@@ -80,7 +71,6 @@ export function Quiz({
   showExitConfirm,
   onSubmit,
   onCheckWrite5,
-  onAdvance,
   onOpenExitConfirm,
   onCloseExitConfirm,
   onConfirmExit,
@@ -165,20 +155,6 @@ export function Quiz({
             if (e.key === 'Enter') e.preventDefault()
           }}
         />
-        <Button
-          id="w5-done"
-          className="btn btn-primary btn-lg btn-full"
-          disabled={done < 5}
-          onClick={onAdvance}
-        >
-          {done === 5 ? (
-            <>
-              {t(uiLang, 'gotItKeepGoing')} <ArrowRight size={18} color={accentText(avatar)} />
-            </>
-          ) : (
-            t(uiLang, 'doneOfFive', { n: String(done) })
-          )}
-        </Button>
       </div>
     )
   }

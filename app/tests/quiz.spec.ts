@@ -65,12 +65,11 @@ test('a wrong answer drops into write-5x, and each correct repetition earns its 
     })
   }
 
-  await expect(page.locator('#w5-done')).toBeEnabled()
-  await page.click('#w5-done')
-
   // 0 (the original answer was wrong, no coin) + 5 (one per repetition) = 5
   await expect(page.locator('[data-testid="coin-count"]').first()).toHaveText('5')
-  await expect(page.getByText('2 / 10')).toBeVisible()
+  // Auto-advances once all 5 mascots are filled in, same as a correct
+  // answer in normal mode — no button to tap.
+  await expect(page.getByText('2 / 10')).toBeVisible({ timeout: 3000 })
 })
 
 test('write-5x uses a single input, with a mascot per repetition filling in as each is confirmed', async ({

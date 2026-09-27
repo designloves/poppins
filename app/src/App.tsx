@@ -47,7 +47,6 @@ function App() {
     content = (
       <Quiz
         list={state.activeList}
-        avatar={state.avatar}
         uiLang={state.uiLang}
         coins={state.coins}
         coinBump={state.coinBump}
@@ -65,7 +64,6 @@ function App() {
         showExitConfirm={state.showExitConfirm}
         onSubmit={state.submitQuizAnswer}
         onCheckWrite5={state.checkWrite5}
-        onAdvance={state.advanceQuiz}
         onOpenExitConfirm={state.openExitConfirm}
         onCloseExitConfirm={state.closeExitConfirm}
         onConfirmExit={state.confirmExit}
