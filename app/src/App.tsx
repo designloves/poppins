@@ -7,10 +7,11 @@ import { Paste } from './screens/Paste'
 import { Placeholder } from './screens/Placeholder'
 import { PracticeSetup } from './screens/PracticeSetup'
 import { Quiz } from './screens/Quiz'
+import { Settings } from './screens/Settings'
 import { useAppState } from './state/useAppState'
 
 const PLACEHOLDER_TITLES = {
-  settings: 'Settings',
+  login: 'Log in',
 } as const
 
 function App() {
@@ -119,6 +120,21 @@ function App() {
       />
     )
   } else if (state.screen === 'settings') {
+    content = (
+      <Settings
+        avatar={state.avatar}
+        uiLang={state.uiLang}
+        soundOn={state.soundOn}
+        pronunciationOn={state.pronunciationOn}
+        onBack={() => state.navigate('home')}
+        onLogin={() => state.navigate('login')}
+        onSetAvatar={state.setAvatar}
+        onSetUiLang={state.setUiLang}
+        onToggleSound={() => state.setSoundOn((v) => !v)}
+        onTogglePronunciation={() => state.setPronunciationOn((v) => !v)}
+      />
+    )
+  } else if (state.screen === 'login') {
     content = <Placeholder title={PLACEHOLDER_TITLES[state.screen]} navigate={state.navigate} />
   } else if (state.screen === 'home') {
     content = home
