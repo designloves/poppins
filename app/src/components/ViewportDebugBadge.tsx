@@ -5,6 +5,7 @@ interface Metrics {
   visualViewportHeight: number | null
   visualViewportOffsetTop: number | null
   appHeight: string
+  appTop: string
   frameHeight: number | null
   frameTop: number | null
   screenHeight: number | null
@@ -21,6 +22,7 @@ function readMetrics(): Metrics {
     visualViewportHeight: window.visualViewport?.height ?? null,
     visualViewportOffsetTop: window.visualViewport?.offsetTop ?? null,
     appHeight: getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
+    appTop: getComputedStyle(document.documentElement).getPropertyValue('--app-top').trim(),
     frameHeight: frame?.getBoundingClientRect().height ?? null,
     frameTop: frame?.getBoundingClientRect().top ?? null,
     screenHeight: screen?.getBoundingClientRect().height ?? null,
@@ -75,7 +77,7 @@ export function ViewportDebugBadge() {
       }}
     >
       {`innerHeight=${metrics.innerHeight} vvHeight=${metrics.visualViewportHeight} vvOffsetTop=${metrics.visualViewportOffsetTop}
---app-height=${metrics.appHeight} frameH=${metrics.frameHeight?.toFixed(0)} frameTop=${metrics.frameTop?.toFixed(0)}
+--app-height=${metrics.appHeight} --app-top=${metrics.appTop} frameH=${metrics.frameHeight?.toFixed(0)} frameTop=${metrics.frameTop?.toFixed(0)}
 screenH=${metrics.screenHeight?.toFixed(0)} screenScrollTop=${metrics.screenScrollTop} active=${metrics.activeElement}`}
     </div>
   )

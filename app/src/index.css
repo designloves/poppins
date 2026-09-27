@@ -6,6 +6,7 @@
 
 :root {
   --app-height: 100dvh;
+  --app-top: 0px;
   --paper: #f4f1e8;
   --paper-alt: #e9e4d2;
   --bg: #f4f1e8;
@@ -67,9 +68,17 @@ body {
      by that) — without its own overflow:hidden, any sub-pixel rounding
      overflow (routine on mobile Safari) is fully exposed as real,
      touch-scrollable horizontal/vertical overflow instead of being
-     silently clipped. */
+     silently clipped.
+     top: var(--app-top, 0) rather than a plain 0: position:fixed anchors
+     to the *layout* viewport's origin, but iOS Safari can pan the
+     *visual* viewport away from it independently (visualViewport.offsetTop)
+     when a focused input needs to clear the keyboard — confirmed on a
+     real device (visualViewport.offsetTop ~414px, #frame rendered at
+     top:-414px). That pan isn't a scroll position, so nothing that resets
+     scroll (including position:fixed's usual scroll-immunity) touches it
+     — --app-top (viewportHeight.ts) tracks it directly instead. */
   position: fixed;
-  top: 0;
+  top: var(--app-top, 0);
   left: 0;
   right: 0;
   height: var(--app-height, 100dvh);

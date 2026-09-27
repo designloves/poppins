@@ -28,6 +28,42 @@ async function startQuiz(page: Page) {
 // keyboard-shrunk --app-height (or a real viewport resize) with #screen
 // already scrolled away from the top, then a focus event.
 
+// Regression test for the actual root cause behind "the word card and
+// input scroll off-screen and stay there no matter what": confirmed on a
+// real device via the ?debug=1 overlay — visualViewport.offsetTop reads
+// ~414px (iOS Safari panning the *visual* viewport to clear the keyboard)
+// while #frame, anchored to the *layout* viewport by position:fixed,
+// rendered at top:-414px. That's a pan, not a scroll position, so
+// resetOuterScroll() (which only resets scroll) never touched it —
+// nothing did, until #frame's own top started tracking
+// visualViewport.offsetTop directly via --app-top.
+test('#frame stays anchored to the visible window when the visual viewport pans (iOS keyboard quirk)', async ({
+  page,
+}) => {
+  await startQuiz(page)
+
+  const pan = 120
+  await page.evaluate((offsetTop) => {
+    Object.defineProperty(window.visualViewport, 'offsetTop', {
+      configurable: true,
+      get: () => offsetTop,
+    })
+    window.visualViewport!.dispatchEvent(new Event('scroll'))
+  }, pan)
+  await page.waitForTimeout(100)
+
+  const { appTop, frameTop } = await page.evaluate(() => ({
+    appTop: getComputedStyle(document.documentElement).getPropertyValue('--app-top').trim(),
+    frameTop: document.getElementById('frame')!.getBoundingClientRect().top,
+  }))
+  expect(appTop).toBe('120px')
+  // #frame's CSS top is var(--app-top), i.e. the pan amount — so relative
+  // to the layout viewport it renders at exactly the pan offset, which
+  // cancels the visual viewport's own pan and keeps it visible at 0 from
+  // the user's actual point of view.
+  expect(frameTop).toBe(pan)
+})
+
 test('focusing the quiz input snaps #screen back to the top', async ({ page }) => {
   await startQuiz(page)
 
