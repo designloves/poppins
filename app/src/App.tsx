@@ -151,8 +151,8 @@ function App() {
   }
 
   return (
-    <div id="frame" style={{ position: 'relative', minHeight: '100vh' }}>
-      {content}
+    <div id="frame">
+      <div id="screen">{content}</div>
       <div
         id="fx-layer"
         style={{

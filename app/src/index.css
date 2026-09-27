@@ -5,6 +5,7 @@
 }
 
 :root {
+  --app-height: 100dvh;
   --paper: #f4f1e8;
   --paper-alt: #e9e4d2;
   --bg: #f4f1e8;
@@ -31,10 +32,37 @@
   --m-font: 'JetBrains Mono', ui-monospace, monospace;
 }
 
+html {
+  height: var(--app-height, 100dvh);
+  overflow: hidden;
+}
+
 body {
   background: var(--bg);
   color-scheme: light dark;
   font-family: var(--b-font);
+  height: var(--app-height, 100dvh);
+  overflow: hidden;
+}
+
+#frame {
+  height: var(--app-height, 100dvh);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+#screen {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  background: var(--bg);
+}
+
+.short-viewport .quiz-hint {
+  display: none;
 }
 
 .h-font {
