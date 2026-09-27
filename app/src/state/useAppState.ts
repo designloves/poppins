@@ -67,8 +67,8 @@ export function useAppState() {
   const [coins, setCoins] = useState(() => loadSettings().coins ?? 0)
   const [uiLang] = useState<UiLang>(() => loadSettings().uiLang ?? 'sv')
   const [coinBump, setCoinBump] = useState(false)
-  const [lists] = useState(SAMPLE_LISTS)
-  const [activeListId] = useState(SAMPLE_LISTS[0]?.id ?? null)
+  const [lists, setLists] = useState(SAMPLE_LISTS)
+  const [activeListId, setActiveListId] = useState<string | null>(SAMPLE_LISTS[0]?.id ?? null)
   const [showGreeting, setShowGreeting] = useState(false)
   const [greetingHiding, setGreetingHiding] = useState(false)
 
@@ -305,6 +305,16 @@ export function useAppState() {
     if (activeList) startQuiz(quizReversed)
   }
 
+  function selectList(id: string) {
+    setActiveListId(id)
+    navigate('home')
+  }
+
+  function deleteListById(id: string) {
+    setLists((ls) => ls.filter((l) => l.id !== id))
+    setActiveListId((cur) => (cur === id ? null : cur))
+  }
+
   return {
     screen,
     navigate,
@@ -316,6 +326,9 @@ export function useAppState() {
     uiLang,
     lists,
     activeList,
+    activeListId,
+    selectList,
+    deleteListById,
     showGreeting,
     greetingHiding,
     greetMascot,

@@ -2,13 +2,13 @@ import { CoinFlight } from './components/CoinFlight'
 import { ScreenFx } from './components/ScreenFx'
 import { Done } from './screens/Done'
 import { Home } from './screens/Home'
+import { Lists } from './screens/Lists'
 import { Placeholder } from './screens/Placeholder'
 import { PracticeSetup } from './screens/PracticeSetup'
 import { Quiz } from './screens/Quiz'
 import { useAppState } from './state/useAppState'
 
 const PLACEHOLDER_TITLES = {
-  lists: 'My lists',
   paste: 'New / edit list',
   settings: 'Settings',
 } as const
@@ -81,7 +81,20 @@ function App() {
         onPlayAgain={state.playAgain}
       />
     )
-  } else if (state.screen === 'lists' || state.screen === 'paste' || state.screen === 'settings') {
+  } else if (state.screen === 'lists') {
+    content = (
+      <Lists
+        lists={state.lists}
+        activeListId={state.activeListId}
+        avatar={state.avatar}
+        uiLang={state.uiLang}
+        onBack={() => state.navigate('home')}
+        onAddNew={() => state.navigate('paste')}
+        onSelect={state.selectList}
+        onDelete={state.deleteListById}
+      />
+    )
+  } else if (state.screen === 'paste' || state.screen === 'settings') {
     content = <Placeholder title={PLACEHOLDER_TITLES[state.screen]} navigate={state.navigate} />
   } else if (state.screen === 'home') {
     content = home
