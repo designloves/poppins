@@ -4,9 +4,10 @@
 // dark overlay closes) until something nudges it to re-evaluate. Briefly
 // changing the <meta name="theme-color"> tag's content and then restoring
 // it forces that re-evaluation; a known workaround for this exact class
-// of staleness, not a guess. Called on every screen change (see
-// navigate() in useAppState.ts) since that's every point content could
-// have shifted enough for Safari's cached chrome color to be wrong.
+// of staleness, not a guess. Called on every screen change and every
+// avatar change (see navigate() and the avatar effect in
+// useAppState.ts) since those are the points content/color could have
+// shifted enough for Safari's cached chrome color to be wrong.
 export function nudgeThemeColor() {
   try {
     const meta = document.querySelector('meta[name="theme-color"]')

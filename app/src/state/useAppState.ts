@@ -195,6 +195,14 @@ export function useAppState() {
     root.setProperty('--bg', AVATAR_TINTS[avatar])
     root.setProperty('--accent', AVATAR_BUTTON[avatar])
     root.setProperty('--accent-text', AVATAR_BUTTON_TEXT[avatar] || 'var(--ink)')
+    // theme-color is a static meta tag, so switching avatars doesn't
+    // change what Safari's chrome samples unless we also update its
+    // content here — then nudge so Safari re-evaluates it right away
+    // instead of waiting for the next full navigate().
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', AVATAR_TINTS[avatar])
+    nudgeThemeColor()
   }, [avatar])
 
   const activeList = lists.find((l) => l.id === activeListId) ?? null
