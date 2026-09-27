@@ -5,7 +5,7 @@ import { accentText, COLOR_MAP } from '../data/constants'
 import type { AvatarKey, WordList } from '../data/constants'
 import { LANGUAGE_CODES, t, wordsCountText } from '../data/i18n'
 import type { UiLang } from '../data/i18n'
-import { ArrowRight, Bloom, Books, Pencil, Plus } from '../icons/icons'
+import { ArrowRight, Bloom, Books, Hanger, Pencil, Plus } from '../icons/icons'
 import { Mascot } from '../icons/Mascot'
 import type { Screen } from '../state/useAppState'
 
@@ -17,10 +17,12 @@ interface HomeProps {
   activeList: WordList | null
   showGreeting: boolean
   greetingHiding: boolean
+  equippedAccessoryId: string | null
   navigate: (screen: Screen) => void
   greetMascot: (greeting: string) => void
   onNewList: () => void
   onEditList: () => void
+  onOpenDressingRoom: () => void
 }
 
 export function Home({
@@ -31,10 +33,12 @@ export function Home({
   activeList,
   showGreeting,
   greetingHiding,
+  equippedAccessoryId,
   navigate,
   greetMascot,
   onNewList,
   onEditList,
+  onOpenDressingRoom,
 }: HomeProps) {
   const accent = accentText(avatar)
 
@@ -58,6 +62,25 @@ export function Home({
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <CoinPouch coins={coins} bump={coinBump} />
           <Button
+            title={t(uiLang, 'dressingRoom')}
+            onClick={onOpenDressingRoom}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 999,
+              background: 'var(--paper-alt)',
+              border: 'var(--border-thin)',
+              cursor: 'pointer',
+              padding: 0,
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Hanger size={20} color="#241F3D" />
+          </Button>
+          <Button
             title={t(uiLang, 'settingsTitle')}
             onClick={() => navigate('settings')}
             style={{
@@ -73,7 +96,7 @@ export function Home({
               flexShrink: 0,
             }}
           >
-            <AvatarImage avatar={avatar} diameter={44} />
+            <AvatarImage avatar={avatar} diameter={44} accessoryId={equippedAccessoryId} />
           </Button>
         </div>
       </div>

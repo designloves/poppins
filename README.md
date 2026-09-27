@@ -21,6 +21,12 @@ Sign-in is real — a magic-link email through Supabase, the same project's publ
 
 Known gap: the mobile keyboard-avoidance / dynamic-viewport-height system the original app had (`--app-height`, `resetOuterScroll`, html/body layout fixes) hasn't been ported yet — that's real, separate infrastructure work.
 
+### Gamification: coins → dressing room
+
+A multi-step plan: coins (earning, persistence, balance display — shipped) → a dressing room shell proving the equip/render loop end to end with one free accessory (shipped) → a real priced shop with several accessories across categories, using the same overlay technique → full-body avatars and clothing, if the earlier steps land well.
+
+The dressing room (`app/src/screens/DressingRoom.tsx`) lets you equip/unequip accessories, which then render as an overlay (`app/src/components/AccessoryOverlay.tsx`) on top of the avatar image wherever it appears (Home header, Settings profile card). Accessories are defined in `app/src/data/accessories.ts`; there's currently one free starter item (a hand-drawn party hat, since no sourced accessory art exists yet) with no purchase flow — that's the next step, once real art is available.
+
 ## Tests
 
 End-to-end tests (Playwright) drive the real UI against the built app (`app/tests/`, run via `npm test` from `app/`).

@@ -44,6 +44,7 @@ interface PersistedSettings {
   uiLang: UiLang
   soundOn: boolean
   pronunciationOn: boolean
+  equippedAccessoryId: string | null
 }
 
 function loadSettings(): Partial<PersistedSettings> {
@@ -56,7 +57,15 @@ function loadSettings(): Partial<PersistedSettings> {
 }
 
 export type Screen =
-  'home' | 'practiceSetup' | 'quiz' | 'done' | 'lists' | 'paste' | 'settings' | 'login'
+  | 'home'
+  | 'practiceSetup'
+  | 'quiz'
+  | 'done'
+  | 'lists'
+  | 'paste'
+  | 'settings'
+  | 'login'
+  | 'dressingRoom'
 export interface QuizResult {
   right: number
   wrong: number
@@ -100,6 +109,14 @@ export function useAppState() {
   const [soundOn, setSoundOn] = useState(() => loadSettings().soundOn ?? false)
   const [pronunciationOn, setPronunciationOn] = useState(
     () => loadSettings().pronunciationOn ?? false,
+  )
+
+  // ── Dressing room ──
+  // All ACCESSORIES are free starter items for now (step 2 of the
+  // coins → dressing room plan: prove the equip/render loop). A priced
+  // shop with real ownership tracking is a later step.
+  const [equippedAccessoryId, setEquippedAccessoryId] = useState<string | null>(
+    () => loadSettings().equippedAccessoryId ?? null,
   )
 
   // ── Auth / Login ──
@@ -158,14 +175,21 @@ export function useAppState() {
   })
 
   useEffect(() => {
-    const settings: PersistedSettings = { avatar, coins, uiLang, soundOn, pronunciationOn }
+    const settings: PersistedSettings = {
+      avatar,
+      coins,
+      uiLang,
+      soundOn,
+      pronunciationOn,
+      equippedAccessoryId,
+    }
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
     } catch {
       // localStorage can throw (private browsing, quota) — losing settings
       // persistence isn't worth surfacing an error for
     }
-  }, [avatar, coins, uiLang, soundOn, pronunciationOn])
+  }, [avatar, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId])
 
   useEffect(() => {
     const root = document.documentElement.style
@@ -393,6 +417,14 @@ export function useAppState() {
     navigate('home')
   }
 
+  function openDressingRoom() {
+    navigate('dressingRoom')
+  }
+
+  function toggleAccessory(id: string) {
+    setEquippedAccessoryId((cur) => (cur === id ? null : id))
+  }
+
   function selectList(id: string) {
     setActiveListId(id)
     navigate('home')
@@ -570,6 +602,9 @@ export function useAppState() {
     setSoundOn,
     pronunciationOn,
     setPronunciationOn,
+    equippedAccessoryId,
+    openDressingRoom,
+    toggleAccessory,
     currentUser,
     loginEmail,
     setLoginEmail,

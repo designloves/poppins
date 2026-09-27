@@ -1,5 +1,6 @@
 import { CoinFlight } from './components/CoinFlight'
 import { ScreenFx } from './components/ScreenFx'
+import { DressingRoom } from './screens/DressingRoom'
 import { Done } from './screens/Done'
 import { Home } from './screens/Home'
 import { Lists } from './screens/Lists'
@@ -22,10 +23,12 @@ function App() {
       activeList={state.activeList}
       showGreeting={state.showGreeting}
       greetingHiding={state.greetingHiding}
+      equippedAccessoryId={state.equippedAccessoryId}
       navigate={state.navigate}
       greetMascot={state.greetMascot}
       onNewList={state.openNewList}
       onEditList={state.openEditList}
+      onOpenDressingRoom={state.openDressingRoom}
     />
   )
 
@@ -122,6 +125,7 @@ function App() {
         uiLang={state.uiLang}
         soundOn={state.soundOn}
         pronunciationOn={state.pronunciationOn}
+        equippedAccessoryId={state.equippedAccessoryId}
         currentUser={state.currentUser}
         onBack={() => state.navigate('home')}
         onLogin={state.openLogin}
@@ -144,6 +148,16 @@ function App() {
         onChangeEmail={state.setLoginEmail}
         onSubmit={state.submitLogin}
         onSkip={state.skipLogin}
+      />
+    )
+  } else if (state.screen === 'dressingRoom') {
+    content = (
+      <DressingRoom
+        avatar={state.avatar}
+        uiLang={state.uiLang}
+        equippedAccessoryId={state.equippedAccessoryId}
+        onBack={() => state.navigate('home')}
+        onToggle={state.toggleAccessory}
       />
     )
   } else if (state.screen === 'home') {

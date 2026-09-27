@@ -10,6 +10,7 @@ interface SettingsProps {
   uiLang: UiLang
   soundOn: boolean
   pronunciationOn: boolean
+  equippedAccessoryId: string | null
   currentUser: CurrentUser | null
   onBack: () => void
   onLogin: () => void
@@ -25,6 +26,7 @@ export function Settings({
   uiLang,
   soundOn,
   pronunciationOn,
+  equippedAccessoryId,
   currentUser,
   onBack,
   onLogin,
@@ -74,7 +76,7 @@ export function Settings({
               flexShrink: 0,
             }}
           >
-            <AvatarImage avatar={avatar} diameter={64} />
+            <AvatarImage avatar={avatar} diameter={64} accessoryId={equippedAccessoryId} />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="h-font" style={{ fontSize: 18, color: 'var(--ink)' }}>

@@ -67,6 +67,11 @@ const UI_STRINGS = {
     checkInbox: 'Check your inbox',
     magicLinkSent: 'I sent a sparkly link to {email}. Tap it to come on in.',
     clickedItLetMeIn: 'I clicked it — let me in',
+    dressingRoom: 'Dressing room',
+    wearIt: 'Wear it',
+    takeOff: 'Take off',
+    free: 'Free',
+    partyHat: 'Party hat',
   },
   sv: {
     todaysList: 'Dagens lista',
@@ -133,6 +138,11 @@ const UI_STRINGS = {
     checkInbox: 'Kolla din inkorg',
     magicLinkSent: 'Jag skickade en glittrig länk till {email}. Tryck på den för att komma in.',
     clickedItLetMeIn: 'Jag klickade på den — släpp in mig',
+    dressingRoom: 'Garderoben',
+    wearIt: 'Ta på',
+    takeOff: 'Ta av',
+    free: 'Gratis',
+    partyHat: 'Partyhatt',
   },
 } as const
 
@@ -163,6 +173,16 @@ export function wordsCountText(uiLang: UiLang, n: number): string {
 
 export function listsCountText(uiLang: UiLang, n: number): string {
   return uiLang === 'sv' ? `${n} ${n === 1 ? 'lista' : 'listor'}` : `${n} list${n !== 1 ? 's' : ''}`
+}
+
+// Maps an accessory's id (app/src/data/accessories.ts) to its i18n key.
+const ACCESSORY_NAME_KEYS: Record<string, UiStringKey> = {
+  'party-hat': 'partyHat',
+}
+
+export function accessoryName(uiLang: UiLang, id: string): string {
+  const key = ACCESSORY_NAME_KEYS[id]
+  return key ? t(uiLang, key) : id
 }
 
 export const LANGUAGE_CODES: Record<string, string> = {
