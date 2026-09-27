@@ -3,6 +3,7 @@ import { langHelpers, type WordList } from '../data/constants'
 import { langName, t, type UiLang } from '../data/i18n'
 import { ArrowBack } from '../icons/icons'
 import { Mascot } from '../icons/Mascot'
+import { useSwipeBack } from '../lib/useSwipeBack'
 
 interface PracticeSetupProps {
   list: WordList
@@ -12,6 +13,7 @@ interface PracticeSetupProps {
 }
 
 export function PracticeSetup({ list, uiLang, onBack, onStart }: PracticeSetupProps) {
+  useSwipeBack(onBack)
   const lh = langHelpers(list, false)
   const srcLang = langName(uiLang, lh.from)
   const tgtLang = langName(uiLang, lh.to)

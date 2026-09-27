@@ -11,6 +11,7 @@ import {
 } from '../data/constants'
 import { langName, t, type UiLang } from '../data/i18n'
 import { animName } from '../lib/animName'
+import { useSwipeBack } from '../lib/useSwipeBack'
 import { ArrowDown, ArrowRight, ArrowUp, Check, Cross } from '../icons/icons'
 import { Mascot, type MascotMood } from '../icons/Mascot'
 
@@ -80,6 +81,7 @@ export function Quiz({
   onCloseExitConfirm,
   onConfirmExit,
 }: QuizProps) {
+  useSwipeBack(onOpenExitConfirm)
   const lh = langHelpers(list, quizReversed)
   const word = quizWords[quizIdx]
   const total = quizWords.length

@@ -3,6 +3,7 @@ import { ArrowRight, Confetti, Spark } from '../icons/icons'
 import { Mascot } from '../icons/Mascot'
 import { accentText, type AvatarKey } from '../data/constants'
 import { t, type UiLang } from '../data/i18n'
+import { useSwipeBack } from '../lib/useSwipeBack'
 import type { QuizResult } from '../state/useAppState'
 
 const CONFETTI_COLORS = ['#FFB0C8', '#F2EE5B', '#8AD7FF', '#A8F08C', '#B583E8']
@@ -16,6 +17,7 @@ interface DoneProps {
 }
 
 export function Done({ result, avatar, uiLang, onHome, onPlayAgain }: DoneProps) {
+  useSwipeBack(onHome)
   const r = result ?? { right: 0, wrong: 0, total: 1 }
   const pct = Math.round((r.right / r.total) * 100)
   const stars = pct >= 90 ? 3 : pct >= 60 ? 2 : 1

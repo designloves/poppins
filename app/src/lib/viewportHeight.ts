@@ -68,7 +68,13 @@ export function initViewportHeight() {
     requestAnimationFrame(tick)
   }
 
-  syncAppHeight()
+  // Calling syncAppHeight() synchronously here runs before the browser's
+  // first paint — before Safari has settled its own internal bookkeeping
+  // of chrome/toolbar visibility right after a page load — and can lock
+  // in a transient, incorrect value that nothing then corrects (no
+  // further resize ever fires if nothing else changes). Waiting a couple
+  // of animation frames lets that settle first.
+  requestAnimationFrame(() => requestAnimationFrame(syncAppHeight))
   window.addEventListener('resize', syncAppHeight)
   window.addEventListener('resize', resetOuterScroll)
   if (window.visualViewport) {
