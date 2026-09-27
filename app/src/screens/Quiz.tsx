@@ -402,7 +402,15 @@ export function Quiz({
       {showExitConfirm && (
         <div
           style={{
-            position: 'absolute',
+            // Fixed, not absolute: absolute would size against this
+            // screen's own root div, whose height (minHeight:'100%' of
+            // #screen) can transiently lag the real keyboard-open/closed
+            // state during the brief animation right after tapping the
+            // exit button (which blurs the input, so the keyboard starts
+            // closing at the same moment this dialog opens) — leaving a
+            // sliver uncovered. Fixed pins it to the true viewport
+            // directly, independent of that.
+            position: 'fixed',
             inset: 0,
             background: 'rgba(36,31,61,.5)',
             zIndex: 50,

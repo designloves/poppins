@@ -1,5 +1,6 @@
 import { CoinFlight } from './components/CoinFlight'
 import { ScreenFx } from './components/ScreenFx'
+import { ViewportDebugBadge } from './components/ViewportDebugBadge'
 import { Done } from './screens/Done'
 import { Home } from './screens/Home'
 import { Lists } from './screens/Lists'
@@ -168,6 +169,7 @@ function App() {
           <CoinFlight key={flight.id} {...flight} />
         ))}
       </div>
+      {new URLSearchParams(window.location.search).get('debug') === '1' && <ViewportDebugBadge />}
     </div>
   )
 }
