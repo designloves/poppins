@@ -55,6 +55,56 @@ body {
   color: var(--ink-soft);
 }
 
+/* ── Toggle switch ── */
+.switch {
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  border: var(--border-thin);
+  background: var(--paper-alt);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  outline: none;
+  transition:
+    background 150ms,
+    box-shadow 150ms,
+    transform 150ms;
+  box-shadow: 0 3px 0 var(--ink);
+}
+.switch:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--ink);
+}
+.switch[data-on='true'] {
+  background: var(--mint);
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #fff;
+  border: var(--border-thin);
+  transition: transform 150ms;
+}
+.switch[data-on='true']::after {
+  transform: translateX(18px);
+}
+.avatar-swatch {
+  transition:
+    transform 150ms,
+    box-shadow 150ms;
+}
+.avatar-swatch:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--ink) !important;
+}
+
 .back-btn {
   background: none;
   border: none;

@@ -41,6 +41,8 @@ interface PersistedSettings {
   avatar: AvatarKey
   coins: number
   uiLang: UiLang
+  soundOn: boolean
+  pronunciationOn: boolean
 }
 
 function loadSettings(): Partial<PersistedSettings> {
@@ -52,7 +54,8 @@ function loadSettings(): Partial<PersistedSettings> {
   }
 }
 
-export type Screen = 'home' | 'practiceSetup' | 'quiz' | 'done' | 'lists' | 'paste' | 'settings'
+export type Screen =
+  'home' | 'practiceSetup' | 'quiz' | 'done' | 'lists' | 'paste' | 'settings' | 'login'
 export interface QuizResult {
   right: number
   wrong: number
@@ -75,7 +78,7 @@ export function useAppState() {
   const [screen, setScreen] = useState<Screen>('home')
   const [avatar, setAvatar] = useState<AvatarKey>(() => loadSettings().avatar ?? 'cat')
   const [coins, setCoins] = useState(() => loadSettings().coins ?? 0)
-  const [uiLang] = useState<UiLang>(() => loadSettings().uiLang ?? 'sv')
+  const [uiLang, setUiLang] = useState<UiLang>(() => loadSettings().uiLang ?? 'sv')
   const [coinBump, setCoinBump] = useState(false)
   const [lists, setLists] = useState(SAMPLE_LISTS)
   const [activeListId, setActiveListId] = useState<string | null>(SAMPLE_LISTS[0]?.id ?? null)
@@ -93,10 +96,10 @@ export function useAppState() {
   const [pasteAutoTranslated, setPasteAutoTranslated] = useState(false)
   const [pasteLoading, setPasteLoading] = useState(false)
 
-  // Neither has a settings UI yet (that screen isn't ported), so both
-  // just sit at the legacy app's own defaults for now.
-  const [soundOn] = useState(false)
-  const [pronunciationOn] = useState(false)
+  const [soundOn, setSoundOn] = useState(() => loadSettings().soundOn ?? false)
+  const [pronunciationOn, setPronunciationOn] = useState(
+    () => loadSettings().pronunciationOn ?? false,
+  )
 
   // ── Quiz ──
   const [quizReversed, setQuizReversed] = useState(false)
@@ -133,14 +136,14 @@ export function useAppState() {
   })
 
   useEffect(() => {
-    const settings: PersistedSettings = { avatar, coins, uiLang }
+    const settings: PersistedSettings = { avatar, coins, uiLang, soundOn, pronunciationOn }
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
     } catch {
       // localStorage can throw (private browsing, quota) — losing settings
       // persistence isn't worth surfacing an error for
     }
-  }, [avatar, coins, uiLang])
+  }, [avatar, coins, uiLang, soundOn, pronunciationOn])
 
   useEffect(() => {
     const root = document.documentElement.style
@@ -498,6 +501,11 @@ export function useAppState() {
     addCoins,
     coinBump,
     uiLang,
+    setUiLang,
+    soundOn,
+    setSoundOn,
+    pronunciationOn,
+    setPronunciationOn,
     lists,
     activeList,
     activeListId,

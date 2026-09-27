@@ -123,6 +123,22 @@ export const AVATAR_TINTS: Record<AvatarKey, string> = {
   jellyfish: '#F0C1D9',
 }
 
+// A more saturated version of the same color, for the profile card.
+export const AVATAR_PANEL: Record<AvatarKey, string> = {
+  cat: '#FCDAE2',
+  elephant: '#CBE6F5',
+  bear: '#ECCAA9',
+  bunny: '#FADBE2',
+  frog: '#CCE4BC',
+  owl: '#E1CDF0',
+  lion: '#F8D7A7',
+  penguin: '#B7DBD9',
+  panda: '#D9D9D8',
+  unicorn: '#F0E2F2',
+  fox: '#F2CBA7',
+  jellyfish: '#F2B1DA',
+}
+
 // A more saturated version of each avatar's color, used as the app's
 // accent — cascades to every primary button via --accent/--accent-text.
 export const AVATAR_BUTTON: Record<AvatarKey, string> = {
