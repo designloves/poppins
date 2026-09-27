@@ -117,6 +117,16 @@ body {
     inset 0 2px 0 var(--paper-alt),
     0 0 0 3px var(--pink-soft);
 }
+.inp-mono {
+  font-family: var(--m-font);
+  font-size: 16px;
+  resize: none;
+  line-height: 1.6;
+}
+.inp-header {
+  font-family: var(--h-font);
+  font-size: 18px;
+}
 
 .dotbar {
   display: flex;

@@ -10,13 +10,23 @@ import {
   langHelpers,
   type AvatarKey,
   type Word,
+  type WordList,
 } from '../data/constants'
 import { TTS_LOCALE, type UiLang } from '../data/i18n'
 import { COIN_FLIGHT_MS, type CoinFlightData } from '../components/CoinFlight'
 import type { ScreenFxKind } from '../components/ScreenFx'
 import type { QuizFeedback } from '../components/FeedbackBurst'
+import {
+  guessPairFromText,
+  looksLikeSingleWords,
+  parsePasteText,
+  type LangPair,
+} from '../lib/pasteParsing'
 import { shuffle } from '../lib/shuffle'
 import { playCorrectSound, playWrongSound } from '../lib/sound'
+import { translateWords } from '../lib/translate'
+
+const NEW_LIST_COLORS = ['rose', 'butter', 'sky', 'mint'] as const
 
 const SETTINGS_KEY = 'poppins_settings_v1'
 const GREETING_DURATION_MS = 2000
@@ -71,6 +81,17 @@ export function useAppState() {
   const [activeListId, setActiveListId] = useState<string | null>(SAMPLE_LISTS[0]?.id ?? null)
   const [showGreeting, setShowGreeting] = useState(false)
   const [greetingHiding, setGreetingHiding] = useState(false)
+
+  // ── Paste / edit list ──
+  const [pasteName, setPasteName] = useState('')
+  const [pasteText, setPasteTextState] = useState('')
+  const [pasteParsed, setPasteParsed] = useState<Word[]>([])
+  const [pasteStep, setPasteStep] = useState<'paste' | 'review'>('paste')
+  const [editingListId, setEditingListId] = useState<string | null>(null)
+  const [pastePair, setPastePair] = useState<LangPair>({ from: 'sv', to: 'en' })
+  const [pasteAutoGuessed, setPasteAutoGuessed] = useState(false)
+  const [pasteAutoTranslated, setPasteAutoTranslated] = useState(false)
+  const [pasteLoading, setPasteLoading] = useState(false)
 
   // Neither has a settings UI yet (that screen isn't ported), so both
   // just sit at the legacy app's own defaults for now.
@@ -315,6 +336,159 @@ export function useAppState() {
     setActiveListId((cur) => (cur === id ? null : cur))
   }
 
+  function saveNewList(list: WordList) {
+    setLists((ls) => [...ls, list])
+    setActiveListId(list.id)
+    navigate('home')
+  }
+
+  function updateListById(id: string, patch: Partial<WordList>) {
+    setLists((ls) => ls.map((l) => (l.id === id ? { ...l, ...patch } : l)))
+    setActiveListId(id)
+    navigate('home')
+  }
+
+  function resetPasteState() {
+    setPasteName('')
+    setPasteTextState('')
+    setPasteParsed([])
+    setPasteStep('paste')
+    setEditingListId(null)
+    setPastePair({ from: 'sv', to: 'en' })
+    setPasteAutoGuessed(false)
+    setPasteAutoTranslated(false)
+    setPasteLoading(false)
+  }
+
+  function openNewList() {
+    resetPasteState()
+    navigate('paste')
+  }
+
+  function openEditList() {
+    if (!activeList) return
+    const text = activeList.words
+      .map((w) => `${w[activeList.from] ?? w.sv ?? ''} = ${w[activeList.to] ?? w.en ?? ''}`)
+      .join('\n')
+    setPasteName(activeList.name)
+    setPasteTextState(text)
+    setPasteParsed([])
+    setPasteStep('paste')
+    setEditingListId(activeList.id)
+    setPastePair({ from: activeList.from || 'sv', to: activeList.to || 'en' })
+    setPasteAutoGuessed(true)
+    setPasteAutoTranslated(false)
+    setPasteLoading(false)
+    navigate('paste')
+  }
+
+  function closePaste() {
+    navigate(activeListId ? 'home' : 'lists')
+  }
+
+  function setPasteText(value: string) {
+    setPasteTextState(value)
+  }
+
+  async function reTranslateReview(pair: LangPair) {
+    setPastePair(pair)
+    setPasteAutoGuessed(true)
+    setPasteLoading(true)
+    try {
+      const rawWords = pasteText
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+      const { translations } = await translateWords(rawWords, pair.from, pair.to)
+      const parsed = rawWords.map((w, i) => ({ [pair.from]: w, [pair.to]: translations[i] }))
+      setPasteParsed(parsed)
+      setPasteLoading(false)
+    } catch {
+      setPasteLoading(false)
+      window.alert('Could not translate — try again.')
+    }
+  }
+
+  function changePasteFrom(code: string) {
+    const pair = { ...pastePair, from: code }
+    if (pasteAutoTranslated) {
+      void reTranslateReview(pair)
+    } else {
+      setPastePair(pair)
+      setPasteAutoGuessed(true)
+      setPasteParsed(parsePasteText(pasteText, pair))
+    }
+  }
+
+  function changePasteTo(code: string) {
+    const pair = { ...pastePair, to: code }
+    if (pasteAutoTranslated) {
+      void reTranslateReview(pair)
+    } else {
+      setPastePair(pair)
+      setPasteAutoGuessed(true)
+      setPasteParsed(parsePasteText(pasteText, pair))
+    }
+  }
+
+  async function submitPasteParse() {
+    const text = pasteText
+    if (looksLikeSingleWords(text)) {
+      const rawWords = text
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+      setPasteLoading(true)
+      try {
+        const { from, to, translations } = await translateWords(rawWords)
+        const pair = { from, to }
+        const parsed = rawWords.map((w, i) => ({ [from]: w, [to]: translations[i] }))
+        setPasteParsed(parsed)
+        setPasteStep('review')
+        setPastePair(pair)
+        setPasteAutoGuessed(true)
+        setPasteAutoTranslated(true)
+        setPasteLoading(false)
+      } catch {
+        setPasteLoading(false)
+        window.alert('Could not translate — try again.')
+      }
+      return
+    }
+    const guess = !pasteAutoGuessed && guessPairFromText(text)
+    const pair = guess || pastePair
+    const parsed = parsePasteText(text, pair)
+    setPasteParsed(parsed)
+    setPasteStep('review')
+    setPastePair(pair)
+    setPasteAutoGuessed(true)
+    setPasteAutoTranslated(false)
+  }
+
+  function backToPasteStep() {
+    setPasteStep('paste')
+  }
+
+  function savePasteList() {
+    if (editingListId) {
+      updateListById(editingListId, {
+        name: pasteName || 'My new list',
+        words: pasteParsed,
+        from: pastePair.from,
+        to: pastePair.to,
+      })
+    } else {
+      saveNewList({
+        id: 'user-' + Date.now(),
+        name: pasteName || 'My new list',
+        color: NEW_LIST_COLORS[Math.floor(Math.random() * NEW_LIST_COLORS.length)],
+        words: pasteParsed,
+        from: pastePair.from,
+        to: pastePair.to,
+      })
+    }
+  }
+
   return {
     screen,
     navigate,
@@ -329,6 +503,23 @@ export function useAppState() {
     activeListId,
     selectList,
     deleteListById,
+    openNewList,
+    openEditList,
+    closePaste,
+    pasteName,
+    setPasteName,
+    pasteText,
+    setPasteText,
+    pasteParsed,
+    pasteStep,
+    editingListId,
+    pastePair,
+    pasteLoading,
+    changePasteFrom,
+    changePasteTo,
+    submitPasteParse,
+    backToPasteStep,
+    savePasteList,
     showGreeting,
     greetingHiding,
     greetMascot,

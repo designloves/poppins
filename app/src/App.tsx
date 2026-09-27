@@ -3,13 +3,13 @@ import { ScreenFx } from './components/ScreenFx'
 import { Done } from './screens/Done'
 import { Home } from './screens/Home'
 import { Lists } from './screens/Lists'
+import { Paste } from './screens/Paste'
 import { Placeholder } from './screens/Placeholder'
 import { PracticeSetup } from './screens/PracticeSetup'
 import { Quiz } from './screens/Quiz'
 import { useAppState } from './state/useAppState'
 
 const PLACEHOLDER_TITLES = {
-  paste: 'New / edit list',
   settings: 'Settings',
 } as const
 
@@ -27,6 +27,8 @@ function App() {
       greetingHiding={state.greetingHiding}
       navigate={state.navigate}
       greetMascot={state.greetMascot}
+      onNewList={state.openNewList}
+      onEditList={state.openEditList}
     />
   )
 
@@ -89,12 +91,34 @@ function App() {
         avatar={state.avatar}
         uiLang={state.uiLang}
         onBack={() => state.navigate('home')}
-        onAddNew={() => state.navigate('paste')}
+        onAddNew={state.openNewList}
         onSelect={state.selectList}
         onDelete={state.deleteListById}
       />
     )
-  } else if (state.screen === 'paste' || state.screen === 'settings') {
+  } else if (state.screen === 'paste') {
+    content = (
+      <Paste
+        avatar={state.avatar}
+        uiLang={state.uiLang}
+        pasteName={state.pasteName}
+        setPasteName={state.setPasteName}
+        pasteText={state.pasteText}
+        setPasteText={state.setPasteText}
+        pasteParsed={state.pasteParsed}
+        pasteStep={state.pasteStep}
+        editingListId={state.editingListId}
+        pastePair={state.pastePair}
+        pasteLoading={state.pasteLoading}
+        onClose={state.closePaste}
+        onChangeFrom={state.changePasteFrom}
+        onChangeTo={state.changePasteTo}
+        onParse={state.submitPasteParse}
+        onBack={state.backToPasteStep}
+        onSave={state.savePasteList}
+      />
+    )
+  } else if (state.screen === 'settings') {
     content = <Placeholder title={PLACEHOLDER_TITLES[state.screen]} navigate={state.navigate} />
   } else if (state.screen === 'home') {
     content = home
