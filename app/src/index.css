@@ -68,6 +68,13 @@ body {
   overflow-x: hidden;
   position: relative;
   background: var(--bg);
+  /* Lets descendants size themselves off #screen's actual (post-flex)
+     height via cqh, which shrinks with --app-height when the keyboard
+     opens. Plain vh units don't: they track the layout viewport, which
+     most mobile browsers leave unchanged when the keyboard opens — so
+     content sized in vh stays full-height and overflows the now-smaller
+     frame instead of shrinking with it. */
+  container-type: size;
 }
 
 .short-viewport .quiz-hint {

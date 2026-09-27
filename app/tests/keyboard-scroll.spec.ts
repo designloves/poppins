@@ -126,3 +126,40 @@ test('a real viewport resize (simulating the keyboard opening) shrinks the frame
   expect(inputBottomAfterFocus).toBeLessThanOrEqual(shrunk)
   expect(inputBottomAfterFocus).toBeGreaterThan(0)
 })
+
+// Regression test for the mismatch the test above can't reach: a real
+// mobile keyboard shrinks the *visual* viewport (what --app-height tracks)
+// without shrinking the *layout* viewport (what the vh unit is defined
+// against) — so page.setViewportSize(), which resizes the real window and
+// therefore both, can't reproduce it. Stubbing --app-height directly while
+// leaving the actual viewport alone reproduces the real mismatch: if the
+// card's own padding/font-size were still sized in vh, they'd stay
+// full-size and push content below the shrunk frame, forcing a scroll to
+// reach it. Sized in cqh (off #screen's real, --app-height-driven height)
+// instead, they shrink with the frame.
+test('the word card shrinks its own padding when --app-height shrinks, even though the layout viewport (vh) does not', async ({
+  page,
+}) => {
+  await startQuiz(page)
+  const full = page.viewportSize()!
+
+  const paddingBefore = await page.evaluate(() =>
+    parseFloat(getComputedStyle(document.querySelector('.card-lg')!).paddingTop),
+  )
+
+  const shrunk = Math.round(full.height * 0.45)
+  await page.evaluate((h) => {
+    document.documentElement.style.setProperty('--app-height', `${h}px`)
+  }, shrunk)
+  await page.waitForTimeout(100)
+
+  const { paddingAfter, cardBottom, frameHeight } = await page.evaluate(() => ({
+    paddingAfter: parseFloat(getComputedStyle(document.querySelector('.card-lg')!).paddingTop),
+    cardBottom: document.querySelector('.card-lg')!.getBoundingClientRect().bottom,
+    frameHeight: document.getElementById('frame')!.getBoundingClientRect().height,
+  }))
+
+  expect(frameHeight).toBeLessThanOrEqual(shrunk)
+  expect(paddingAfter).toBeLessThan(paddingBefore)
+  expect(cardBottom).toBeLessThanOrEqual(shrunk)
+})

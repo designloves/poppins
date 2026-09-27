@@ -317,7 +317,7 @@ export function Quiz({
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          padding: 'clamp(24px,8vh,48px) 48px',
+          padding: 'clamp(24px,8cqh,48px) clamp(24px,8vw,48px)',
           background: fbBg,
           transition: 'background 250ms',
           position: 'relative',
@@ -347,7 +347,7 @@ export function Quiz({
           <div
             className="h-font"
             style={{
-              fontSize: 'clamp(30px,9vh,54px)',
+              fontSize: 'clamp(30px,9cqh,54px)',
               lineHeight: 0.95,
               color: 'var(--ink)',
               letterSpacing: '-.03em',
