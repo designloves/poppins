@@ -151,6 +151,24 @@ test('the write-5x coin pouch stays pinned to the top when its own list scrolls'
   expect(topAfter).toBe(topBefore)
 })
 
+test('the normal quiz top nav (progress dots, counters, exit button) stays pinned to the top', async ({
+  page,
+}) => {
+  await startQuiz(page)
+
+  const nav = page.locator('#quiz-topnav')
+  await expect(nav).toHaveCSS('position', 'sticky')
+
+  const topBefore = await nav.evaluate((el) => el.getBoundingClientRect().top)
+  await page.evaluate(() => {
+    const screen = document.getElementById('screen')!
+    screen.style.paddingBottom = '400px'
+    screen.scrollBy(0, 40)
+  })
+  const topAfter = await nav.evaluate((el) => el.getBoundingClientRect().top)
+  expect(topAfter).toBe(topBefore)
+})
+
 // Regression test for "--app-height doesn't adjust to the remaining space,
 // so the word card and input disappear behind the keyboard": unlike the
 // tests above, this doesn't stub --app-height directly — it resizes the

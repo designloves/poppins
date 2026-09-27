@@ -271,13 +271,20 @@ export function Quiz({
       }}
     >
       <div
+        id="quiz-topnav"
         style={{
-          position: 'relative',
+          position: 'sticky',
+          top: 0,
+          zIndex: 5,
+          background: 'var(--bg)',
           display: 'flex',
           flexDirection: 'column',
           gap: 12,
           // 36px close button + 24px gap from the content next to it.
           paddingRight: 60,
+          paddingTop: 16,
+          paddingBottom: 8,
+          marginTop: -16,
         }}
       >
         <div className="dotbar">
