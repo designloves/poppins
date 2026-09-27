@@ -21,6 +21,12 @@ Sign-in is real — a magic-link email through Supabase, the same project's publ
 
 The app tracks the visual viewport (`app/src/lib/viewportHeight.ts`) so the on-screen keyboard shrinks `#frame` to fit above it instead of covering it, and corrects mobile browsers' own "scroll the focused input into view" behavior where it fights with that shrink — without this, content above a focused input (like the coin pouch during the write-5x remediation) can end up scrolled out of view exactly when it matters. `index.html`'s meta viewport also declares `interactive-widget=resizes-content`, which gets browsers that honor it (Chrome for Android 108+) the same result natively, but that's Chromium-only — Safari has never implemented it, so this JS is what actually makes it work on iOS. `#screen` is a CSS size container so the word card can size its own padding/font off `cqh` (its real, shrunk height) rather than `vh` (the viewport as a whole) — otherwise the frame shrinks but its content doesn't, and overflows it.
 
+### Gamification: coins → dressing room
+
+A multi-step plan: coins (earning, persistence, balance display — shipped) → a dressing room shell proving the equip/render loop end to end with one free accessory (shipped) → a real priced shop with several accessories across categories, using the same overlay technique → full-body avatars and clothing, if the earlier steps land well.
+
+The dressing room (`app/src/screens/DressingRoom.tsx`) lets you equip/unequip accessories, which then render as an overlay (`app/src/components/AccessoryOverlay.tsx`) on top of the avatar image wherever it appears (Home header, Settings profile card). Accessories are defined in `app/src/data/accessories.ts`; there's currently one free starter item (a hand-drawn party hat, since no sourced accessory art exists yet) with no purchase flow — that's the next step, once real art is available.
+
 ## Tests
 
 End-to-end tests (Playwright) drive the real UI against the built app (`app/tests/`, run via `npm test` from `app/`).
