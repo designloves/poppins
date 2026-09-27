@@ -71,7 +71,7 @@ test('a wrong answer drops into write-5x, and finishing it awards a bigger coin 
   await expect(page.getByText('2 / 10')).toBeVisible()
 })
 
-test('write-5x uses a single input, with correct entries stacking below as text', async ({
+test('write-5x uses a single input, with a mascot per repetition filling in as each is confirmed', async ({
   page,
 }) => {
   await startQuiz(page)
@@ -81,19 +81,26 @@ test('write-5x uses a single input, with correct entries stacking below as text'
 
   // Exactly one input on screen — not one per repetition.
   await expect(page.locator('input')).toHaveCount(1)
+  // Five mascot slots, all starting as outlines (not done).
+  await expect(page.getByTestId('write5-mascot')).toHaveCount(5)
+  for (const done of await page
+    .getByTestId('write5-mascot')
+    .evaluateAll((els) => els.map((el) => el.getAttribute('data-done')))) {
+    expect(done).toBe('false')
+  }
 
   const target = await page.locator('#quiz-input').getAttribute('placeholder')
   await page.fill('#quiz-input', target!)
 
-  // The correct entry is confirmed into the list below as plain text...
-  await expect(page.getByTestId('write5-rep')).toHaveCount(1)
-  await expect(page.getByTestId('write5-rep').first()).toHaveText(target!)
+  // The first mascot fills in once its repetition is confirmed correct...
+  await expect(page.getByTestId('write5-mascot').nth(0)).toHaveAttribute('data-done', 'true')
+  await expect(page.getByTestId('write5-mascot').nth(1)).toHaveAttribute('data-done', 'false')
   // ...and the (still single) input clears itself, ready for the next one.
   await expect(page.locator('#quiz-input')).toHaveValue('')
   await expect(page.locator('input')).toHaveCount(1)
 
   await page.fill('#quiz-input', target!)
-  await expect(page.getByTestId('write5-rep')).toHaveCount(2)
+  await expect(page.getByTestId('write5-mascot').nth(1)).toHaveAttribute('data-done', 'true')
 })
 
 test('exit confirm can be dismissed, or used to leave the quiz', async ({ page }) => {

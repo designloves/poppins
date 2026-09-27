@@ -12,8 +12,12 @@ import {
 import { langName, t, type UiLang } from '../data/i18n'
 import { animName } from '../lib/animName'
 import { useSwipeBack } from '../lib/useSwipeBack'
-import { ArrowDown, ArrowRight, ArrowUp, Check, Cross } from '../icons/icons'
+import { ArrowDown, ArrowRight, ArrowUp, Cross } from '../icons/icons'
 import { Mascot, type MascotMood } from '../icons/Mascot'
+
+// One mood per write-5x repetition slot, so the 5 filled-in mascots look
+// varied rather than identical copies of the same expression.
+const WRITE5_MOODS: MascotMood[] = ['happy', 'cheer', 'proud', 'happy', 'cheer']
 
 interface QuizProps {
   list: WordList
@@ -139,8 +143,17 @@ export function Quiz({
             {t(uiLang, 'inLang', { source: lh.src(word), lang: srcLang })}
           </p>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <Mascot size={80} mood="thinking" />
+        {/* One Mascot per repetition instead of a growing text list below
+            the input (which real-device testing showed wasn't reliably
+            visible) — each starts as a faint outline and fills in with a
+            different expression the moment its repetition is confirmed
+            correct, right where the single "thinking" mascot used to sit. */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
+          {WRITE5_MOODS.map((mood, i) => (
+            <div key={i} data-testid="write5-mascot" data-done={i < done}>
+              <Mascot size={44} mood={mood} outline={i >= done} />
+            </div>
+          ))}
         </div>
         <input
           id="quiz-input"
@@ -152,49 +165,6 @@ export function Quiz({
             if (e.key === 'Enter') e.preventDefault()
           }}
         />
-        {/* A single, always-in-the-same-place input rather than 5 stacked
-            ones: checked as you type, each correct entry is confirmed
-            into this growing list below instead of its own input box, so
-            there's only ever one focusable field on screen — no later
-            input that can sit below the fold and need its own scroll to
-            reach. */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-            flex: 1,
-            minHeight: 0,
-            overflowY: 'auto',
-          }}
-        >
-          {quizReps.map((r, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 999,
-                  border: 'var(--border-thin)',
-                  background: 'var(--correct)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <Check size={14} color="#fff" strokeWidth={4} />
-              </div>
-              <span
-                data-testid="write5-rep"
-                className="b-font"
-                style={{ fontSize: 16, color: 'var(--ink)' }}
-              >
-                {r}
-              </span>
-            </div>
-          ))}
-        </div>
         <Button
           id="w5-done"
           className="btn btn-primary btn-lg btn-full"
