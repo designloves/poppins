@@ -1,9 +1,8 @@
 name: App CI
 
-# Quality gate for the in-progress React/TypeScript rewrite under app/.
-# Doesn't deploy anything anywhere — the legacy index.html is still what's
-# live (see deploy.yml). Scoped to app/ changes so unrelated PRs don't
-# pay for it.
+# Quality gate for the app under app/ (lint/format/build/test) —
+# independent of deploy.yml, which publishes app/'s build output.
+# Scoped to app/ changes so unrelated PRs don't pay for it.
 on:
   push:
     branches: [main]

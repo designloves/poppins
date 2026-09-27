@@ -3,7 +3,7 @@ import { AVATAR_ASSET_VERSION, type AvatarKey } from '../data/constants'
 export function AvatarImage({ avatar, diameter }: { avatar: AvatarKey; diameter: number }) {
   return (
     <img
-      src={`/avatars/${avatar}.png?v=${AVATAR_ASSET_VERSION}`}
+      src={`avatars/${avatar}.png?v=${AVATAR_ASSET_VERSION}`}
       alt={avatar}
       width={diameter}
       height={diameter}
