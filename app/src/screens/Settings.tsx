@@ -3,14 +3,17 @@ import { AvatarImage } from '../components/AvatarImage'
 import { AVATAR_PANEL, CHARACTERS, type AvatarKey } from '../data/constants'
 import { t, type UiLang } from '../data/i18n'
 import { ArrowBack, Heart } from '../icons/icons'
+import type { CurrentUser } from '../lib/auth'
 
 interface SettingsProps {
   avatar: AvatarKey
   uiLang: UiLang
   soundOn: boolean
   pronunciationOn: boolean
+  currentUser: CurrentUser | null
   onBack: () => void
   onLogin: () => void
+  onLogout: () => void
   onSetAvatar: (avatar: AvatarKey) => void
   onSetUiLang: (uiLang: UiLang) => void
   onToggleSound: () => void
@@ -22,8 +25,10 @@ export function Settings({
   uiLang,
   soundOn,
   pronunciationOn,
+  currentUser,
   onBack,
   onLogin,
+  onLogout,
   onSetAvatar,
   onSetUiLang,
   onToggleSound,
@@ -76,19 +81,27 @@ export function Settings({
               {t(uiLang, 'hejThere')}
             </div>
             <div className="m-font" style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
-              {t(uiLang, 'notSignedIn')}
+              {currentUser?.email ?? t(uiLang, 'notSignedIn')}
             </div>
           </div>
-          <Button
-            id="settings-login"
-            className="btn btn-primary"
-            style={{ flexShrink: 0, padding: '10px 16px', fontSize: 14 }}
-            onClick={onLogin}
-          >
-            {t(uiLang, 'logIn')}
-          </Button>
+          {!currentUser && (
+            <Button
+              id="settings-login"
+              className="btn btn-primary"
+              style={{ flexShrink: 0, padding: '10px 16px', fontSize: 14 }}
+              onClick={onLogin}
+            >
+              {t(uiLang, 'logIn')}
+            </Button>
+          )}
         </div>
       </div>
+
+      {currentUser && (
+        <Button id="settings-logout" className="btn btn-tertiary btn-full" onClick={onLogout}>
+          {t(uiLang, 'logOut')}
+        </Button>
+      )}
 
       <div>
         <div className="label-caps" style={{ marginBottom: 8 }}>

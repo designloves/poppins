@@ -3,16 +3,12 @@ import { ScreenFx } from './components/ScreenFx'
 import { Done } from './screens/Done'
 import { Home } from './screens/Home'
 import { Lists } from './screens/Lists'
+import { Login } from './screens/Login'
 import { Paste } from './screens/Paste'
-import { Placeholder } from './screens/Placeholder'
 import { PracticeSetup } from './screens/PracticeSetup'
 import { Quiz } from './screens/Quiz'
 import { Settings } from './screens/Settings'
 import { useAppState } from './state/useAppState'
-
-const PLACEHOLDER_TITLES = {
-  login: 'Log in',
-} as const
 
 function App() {
   const state = useAppState()
@@ -126,8 +122,10 @@ function App() {
         uiLang={state.uiLang}
         soundOn={state.soundOn}
         pronunciationOn={state.pronunciationOn}
+        currentUser={state.currentUser}
         onBack={() => state.navigate('home')}
-        onLogin={() => state.navigate('login')}
+        onLogin={state.openLogin}
+        onLogout={state.logout}
         onSetAvatar={state.setAvatar}
         onSetUiLang={state.setUiLang}
         onToggleSound={() => state.setSoundOn((v) => !v)}
@@ -135,7 +133,19 @@ function App() {
       />
     )
   } else if (state.screen === 'login') {
-    content = <Placeholder title={PLACEHOLDER_TITLES[state.screen]} navigate={state.navigate} />
+    content = (
+      <Login
+        avatar={state.avatar}
+        uiLang={state.uiLang}
+        loginEmail={state.loginEmail}
+        loginSent={state.loginSent}
+        loginErr={state.loginErr}
+        loginLoading={state.loginLoading}
+        onChangeEmail={state.setLoginEmail}
+        onSubmit={state.submitLogin}
+        onSkip={state.skipLogin}
+      />
+    )
   } else if (state.screen === 'home') {
     content = home
   }

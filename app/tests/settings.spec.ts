@@ -46,10 +46,11 @@ test('picking a different avatar updates it across the app', async ({ page }) =>
   await expect(page.locator('img[alt="fox"]').first()).toBeVisible()
 })
 
-test('the login button navigates to the not-yet-ported login screen', async ({ page }) => {
+test('the login button navigates to the login screen', async ({ page }) => {
   await page.goto('/')
   await page.click('button[title="Inställningar"]')
   await page.click('#settings-login')
 
-  await expect(page.getByText('Log in')).toBeVisible()
+  await expect(page.getByText('Hej!')).toBeVisible()
+  await expect(page.locator('#login-email')).toBeVisible()
 })
