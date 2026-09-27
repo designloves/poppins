@@ -4,6 +4,7 @@ import { AVATAR_PANEL, CHARACTERS, type AvatarKey } from '../data/constants'
 import { t, type UiLang } from '../data/i18n'
 import { ArrowBack, Heart } from '../icons/icons'
 import type { CurrentUser } from '../lib/auth'
+import { useSwipeBack } from '../lib/useSwipeBack'
 
 interface SettingsProps {
   avatar: AvatarKey
@@ -36,6 +37,7 @@ export function Settings({
   onToggleSound,
   onTogglePronunciation,
 }: SettingsProps) {
+  useSwipeBack(onBack)
   return (
     <div
       style={{

@@ -3,6 +3,7 @@ import type { ChangeEvent, ReactNode } from 'react'
 import { accentText, type AvatarKey, type Word } from '../data/constants'
 import { LANGUAGE_CODES, langName, t, type UiLang } from '../data/i18n'
 import type { LangPair } from '../lib/pasteParsing'
+import { useSwipeBack } from '../lib/useSwipeBack'
 import { ArrowBack, ArrowRight, Check, Spark } from '../icons/icons'
 
 const LANGUAGE_ORDER = Object.keys(LANGUAGE_CODES)
@@ -57,6 +58,7 @@ export function Paste({
   onBack,
   onSave,
 }: PasteProps) {
+  useSwipeBack(onClose)
   const accent = accentText(avatar)
 
   if (pasteStep === 'paste') {

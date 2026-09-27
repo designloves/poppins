@@ -2,21 +2,19 @@ import type { KeyboardEvent } from 'react'
 import { Button } from '@base-ui/react/button'
 import { CoinPouch } from '../components/CoinPouch'
 import { FeedbackBurst } from '../components/FeedbackBurst'
-import {
-  accentText,
-  langHelpers,
-  type AvatarKey,
-  type Word,
-  type WordList,
-} from '../data/constants'
+import { langHelpers, type Word, type WordList } from '../data/constants'
 import { langName, t, type UiLang } from '../data/i18n'
 import { animName } from '../lib/animName'
-import { ArrowDown, ArrowRight, ArrowUp, Check, Cross } from '../icons/icons'
+import { useSwipeBack } from '../lib/useSwipeBack'
+import { ArrowDown, ArrowUp, Cross } from '../icons/icons'
 import { Mascot, type MascotMood } from '../icons/Mascot'
+
+// One mood per write-5x repetition slot, so the 5 filled-in mascots look
+// varied rather than identical copies of the same expression.
+const WRITE5_MOODS: MascotMood[] = ['happy', 'cheer', 'proud', 'happy', 'cheer']
 
 interface QuizProps {
   list: WordList
-  avatar: AvatarKey
   uiLang: UiLang
   coins: number
   coinBump: boolean
@@ -33,8 +31,7 @@ interface QuizProps {
   quizReps: string[]
   showExitConfirm: boolean
   onSubmit: (inputEl: HTMLElement | null) => void
-  onCheckWrite5: (i: number, val: string) => void
-  onAdvance: () => void
+  onCheckWrite5: (val: string) => void
   onOpenExitConfirm: () => void
   onCloseExitConfirm: () => void
   onConfirmExit: () => void
@@ -57,7 +54,6 @@ function interpolateNode(template: string, key: string, node: React.ReactNode): 
 
 export function Quiz({
   list,
-  avatar,
   uiLang,
   coins,
   coinBump,
@@ -75,11 +71,11 @@ export function Quiz({
   showExitConfirm,
   onSubmit,
   onCheckWrite5,
-  onAdvance,
   onOpenExitConfirm,
   onCloseExitConfirm,
   onConfirmExit,
 }: QuizProps) {
+  useSwipeBack(onOpenExitConfirm)
   const lh = langHelpers(list, quizReversed)
   const word = quizWords[quizIdx]
   const total = quizWords.length
@@ -87,21 +83,33 @@ export function Quiz({
 
   if (quizWriteMode) {
     const target = lh.tgt(word)
-    const targetLower = target.toLowerCase()
-    const done = quizReps.filter((r) => r.trim().toLowerCase() === targetLower).length
+    const done = quizReps.length
     const srcLang = langName(uiLang, lh.from)
 
     return (
       <div
         style={{
-          padding: '16px 16px calc(18px + env(safe-area-inset-bottom))',
+          padding: '16px 24px calc(18px + env(safe-area-inset-bottom))',
           display: 'flex',
           flexDirection: 'column',
           gap: 32,
           minHeight: '100%',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div
+          id="write5-topnav"
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            position: 'sticky',
+            top: 0,
+            zIndex: 5,
+            background: 'var(--bg)',
+            paddingTop: 16,
+            paddingBottom: 8,
+            marginTop: -16,
+          }}
+        >
           <CoinPouch coins={coins} bump={coinBump} />
         </div>
         <div style={{ textAlign: 'center' }}>
@@ -125,72 +133,28 @@ export function Quiz({
             {t(uiLang, 'inLang', { source: lh.src(word), lang: srcLang })}
           </p>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <Mascot size={80} mood="thinking" />
+        {/* One Mascot per repetition instead of a growing text list below
+            the input (which real-device testing showed wasn't reliably
+            visible) — each starts as a faint outline and fills in with a
+            different expression the moment its repetition is confirmed
+            correct, right where the single "thinking" mascot used to sit. */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
+          {WRITE5_MOODS.map((mood, i) => (
+            <div key={i} data-testid="write5-mascot" data-done={i < done}>
+              <Mascot size={44} mood={mood} outline={i >= done} />
+            </div>
+          ))}
         </div>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-            flex: 1,
-            minHeight: 0,
-            overflowY: 'auto',
+        <input
+          id="quiz-input"
+          className="inp"
+          value={quizAnswer}
+          placeholder={target}
+          onChange={(e) => onCheckWrite5(e.target.value)}
+          onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === 'Enter') e.preventDefault()
           }}
-        >
-          {quizReps.map((r, i) => {
-            const ok = r.trim().toLowerCase() === targetLower
-            return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div
-                  style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 999,
-                    border: 'var(--border-thin)',
-                    background: ok ? 'var(--correct)' : 'var(--paper-alt)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: 'var(--m-font)',
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: ok ? '#fff' : 'var(--ink)',
-                    flexShrink: 0,
-                  }}
-                >
-                  {ok ? <Check size={14} color="#fff" strokeWidth={4} /> : i + 1}
-                </div>
-                <input
-                  id={`w5-${i}`}
-                  className="inp"
-                  value={r}
-                  disabled={ok}
-                  placeholder={i === 0 ? target : ''}
-                  style={{
-                    background: ok ? 'var(--mint-soft)' : 'var(--paper)',
-                    opacity: ok ? 0.7 : 1,
-                  }}
-                  onChange={(e) => onCheckWrite5(i, e.target.value)}
-                />
-              </div>
-            )
-          })}
-        </div>
-        <Button
-          id="w5-done"
-          className="btn btn-primary btn-lg btn-full"
-          disabled={done < 5}
-          onClick={onAdvance}
-        >
-          {done === 5 ? (
-            <>
-              {t(uiLang, 'gotItKeepGoing')} <ArrowRight size={18} color={accentText(avatar)} />
-            </>
-          ) : (
-            t(uiLang, 'doneOfFive', { n: String(done) })
-          )}
-        </Button>
+        />
       </div>
     )
   }
@@ -247,7 +211,7 @@ export function Quiz({
   return (
     <div
       style={{
-        padding: '16px 16px calc(18px + env(safe-area-inset-bottom))',
+        padding: '16px 24px calc(18px + env(safe-area-inset-bottom))',
         display: 'flex',
         flexDirection: 'column',
         gap: 32,
@@ -256,12 +220,20 @@ export function Quiz({
       }}
     >
       <div
+        id="quiz-topnav"
         style={{
-          position: 'relative',
+          position: 'sticky',
+          top: 0,
+          zIndex: 5,
+          background: 'var(--bg)',
           display: 'flex',
           flexDirection: 'column',
           gap: 12,
-          paddingRight: 28,
+          // 36px close button + 24px gap from the content next to it.
+          paddingRight: 60,
+          paddingTop: 16,
+          paddingBottom: 8,
+          marginTop: -16,
         }}
       >
         <div className="dotbar">
@@ -301,7 +273,7 @@ export function Quiz({
         <Button
           id="quiz-exit"
           className="icon-btn-plain"
-          style={{ position: 'absolute', right: -12, top: '50%', transform: 'translateY(-50%)' }}
+          style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)' }}
           onClick={onOpenExitConfirm}
         >
           <Cross size={20} color="#241F3D" strokeWidth={3} />
@@ -316,7 +288,7 @@ export function Quiz({
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          padding: 'clamp(12px,4vh,24px) 24px',
+          padding: 'clamp(24px,8cqh,48px) clamp(24px,8vw,48px)',
           background: fbBg,
           transition: 'background 250ms',
           position: 'relative',
@@ -346,7 +318,7 @@ export function Quiz({
           <div
             className="h-font"
             style={{
-              fontSize: 'clamp(30px,9vh,54px)',
+              fontSize: 'clamp(30px,9cqh,54px)',
               lineHeight: 0.95,
               color: 'var(--ink)',
               letterSpacing: '-.03em',
@@ -399,8 +371,27 @@ export function Quiz({
       {showExitConfirm && (
         <div
           style={{
-            position: 'absolute',
-            inset: 0,
+            // Fixed, not absolute: absolute would size against this
+            // screen's own root div, whose height (minHeight:'100%' of
+            // #screen) can transiently lag the real keyboard-open/closed
+            // state during the brief animation right after tapping the
+            // exit button (which blurs the input, so the keyboard starts
+            // closing at the same moment this dialog opens) — leaving a
+            // sliver uncovered. Fixed pins it to the true viewport
+            // directly, independent of that.
+            // Inset from the safe areas rather than a flat inset:0: Safari
+            // samples the app's actual rendered content near the screen
+            // edges to color its own chrome (status bar/toolbar), not just
+            // the static theme-color meta tag — that's why it can get
+            // "stuck" showing a dark tint after this scrim closes. Never
+            // painting dark behind the status bar/home indicator in the
+            // first place means there's nothing dark there for Safari to
+            // pick up and cache.
+            position: 'fixed',
+            top: 'env(safe-area-inset-top, 0px)',
+            bottom: 'env(safe-area-inset-bottom, 0px)',
+            left: 0,
+            right: 0,
             background: 'rgba(36,31,61,.5)',
             zIndex: 50,
             display: 'flex',

@@ -46,29 +46,62 @@ test('a correct answer is scored, earns a coin, and advances to the next word', 
   await expect(page.getByText('2 / 10')).toBeVisible({ timeout: 3000 })
 })
 
-test('a wrong answer drops into write-5x, and finishing it awards a bigger coin bonus', async ({
+test('a wrong answer drops into write-5x, and each correct repetition earns its own coin', async ({
   page,
 }) => {
   await startQuiz(page)
   await page.fill('#quiz-input', '__definitely wrong__')
   await page.press('#quiz-input', 'Enter')
 
-  await expect(page.locator('#w5-0')).toBeVisible({ timeout: 2000 })
-  const target = await page.locator('#w5-0').getAttribute('placeholder')
+  await expect(page.getByText('Övning')).toBeVisible({ timeout: 2000 })
+  const target = await page.locator('#quiz-input').getAttribute('placeholder')
   expect(target).toBeTruthy()
 
   for (let i = 0; i < 5; i++) {
-    await page.fill(`#w5-${i}`, target!)
+    await page.fill('#quiz-input', target!)
+    // A coin lands on this repetition, not just once at the end.
+    await expect(page.locator('[data-testid="coin-count"]').first()).toHaveText(String(i + 1), {
+      timeout: 2000,
+    })
   }
 
-  await expect(page.locator('#w5-done')).toBeEnabled()
-  await page.click('#w5-done')
+  // 0 (the original answer was wrong, no coin) + 5 (one per repetition) = 5
+  await expect(page.locator('[data-testid="coin-count"]').first()).toHaveText('5')
+  // Auto-advances once all 5 mascots are filled in, same as a correct
+  // answer in normal mode — no button to tap.
+  await expect(page.getByText('2 / 10')).toBeVisible({ timeout: 3000 })
+})
 
-  // 1 (none yet, answer was wrong) + 3 (write-5x bonus) = 3
-  await expect(page.locator('[data-testid="coin-count"]').first()).toHaveText('3', {
-    timeout: 2000,
-  })
-  await expect(page.getByText('2 / 10')).toBeVisible()
+test('write-5x uses a single input, with a mascot per repetition filling in as each is confirmed', async ({
+  page,
+}) => {
+  await startQuiz(page)
+  await page.fill('#quiz-input', '__definitely wrong__')
+  await page.press('#quiz-input', 'Enter')
+  await expect(page.getByText('Övning')).toBeVisible({ timeout: 2000 })
+
+  // Exactly one input on screen — not one per repetition.
+  await expect(page.locator('input')).toHaveCount(1)
+  // Five mascot slots, all starting as outlines (not done).
+  await expect(page.getByTestId('write5-mascot')).toHaveCount(5)
+  for (const done of await page
+    .getByTestId('write5-mascot')
+    .evaluateAll((els) => els.map((el) => el.getAttribute('data-done')))) {
+    expect(done).toBe('false')
+  }
+
+  const target = await page.locator('#quiz-input').getAttribute('placeholder')
+  await page.fill('#quiz-input', target!)
+
+  // The first mascot fills in once its repetition is confirmed correct...
+  await expect(page.getByTestId('write5-mascot').nth(0)).toHaveAttribute('data-done', 'true')
+  await expect(page.getByTestId('write5-mascot').nth(1)).toHaveAttribute('data-done', 'false')
+  // ...and the (still single) input clears itself, ready for the next one.
+  await expect(page.locator('#quiz-input')).toHaveValue('')
+  await expect(page.locator('input')).toHaveCount(1)
+
+  await page.fill('#quiz-input', target!)
+  await expect(page.getByTestId('write5-mascot').nth(1)).toHaveAttribute('data-done', 'true')
 })
 
 test('exit confirm can be dismissed, or used to leave the quiz', async ({ page }) => {

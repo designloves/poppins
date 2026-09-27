@@ -163,11 +163,10 @@ export const AVATAR_BUTTON_TEXT: Partial<Record<AvatarKey, string>> = { jellyfis
 export const AVATAR_ASSET_VERSION = 3
 
 export const COIN_BUMP_MS = 380
-// A plain correct answer earns COIN_REWARD; finishing the "write it 5
-// times" remediation after a wrong answer earns more, since it took
-// real effort — rewarding grit, not just luck.
+// Every correct answer earns COIN_REWARD — including each repetition of
+// the "write it 5 times" remediation after a wrong answer, rewarding
+// grit rep by rep rather than only once at the end.
 export const COIN_REWARD = 1
-export const WRITE5_COINS = 3
 
 export function accentText(avatar: AvatarKey): string {
   return AVATAR_BUTTON_TEXT[avatar] || '#241F3D'
