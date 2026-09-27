@@ -130,6 +130,27 @@ test('the coin pouch stays within the shrunk frame when the keyboard opens durin
   expect(pouchBottom).toBeLessThanOrEqual(420)
 })
 
+test('the write-5x coin pouch stays pinned to the top when its own list scrolls', async ({
+  page,
+}) => {
+  await startQuiz(page)
+  await page.fill('#quiz-input', '__definitely wrong__')
+  await page.press('#quiz-input', 'Enter')
+  await page.waitForSelector('#w5-0', { timeout: 3000 })
+
+  const nav = page.locator('#write5-topnav')
+  await expect(nav).toHaveCSS('position', 'sticky')
+
+  const topBefore = await nav.evaluate((el) => el.getBoundingClientRect().top)
+  await page.evaluate(() => {
+    const screen = document.getElementById('screen')!
+    screen.style.paddingBottom = '400px' // force genuine overflow to scroll into
+    screen.scrollBy(0, 40)
+  })
+  const topAfter = await nav.evaluate((el) => el.getBoundingClientRect().top)
+  expect(topAfter).toBe(topBefore)
+})
+
 // Regression test for "--app-height doesn't adjust to the remaining space,
 // so the word card and input disappear behind the keyboard": unlike the
 // tests above, this doesn't stub --app-height directly — it resizes the

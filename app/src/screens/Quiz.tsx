@@ -103,7 +103,20 @@ export function Quiz({
           minHeight: '100%',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div
+          id="write5-topnav"
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            position: 'sticky',
+            top: 0,
+            zIndex: 5,
+            background: 'var(--bg)',
+            paddingTop: 16,
+            paddingBottom: 8,
+            marginTop: -16,
+          }}
+        >
           <CoinPouch coins={coins} bump={coinBump} />
         </div>
         <div style={{ textAlign: 'center' }}>
