@@ -379,19 +379,8 @@ export function Quiz({
             // closing at the same moment this dialog opens) — leaving a
             // sliver uncovered. Fixed pins it to the true viewport
             // directly, independent of that.
-            // Inset from the safe areas rather than a flat inset:0: Safari
-            // samples the app's actual rendered content near the screen
-            // edges to color its own chrome (status bar/toolbar), not just
-            // the static theme-color meta tag — that's why it can get
-            // "stuck" showing a dark tint after this scrim closes. Never
-            // painting dark behind the status bar/home indicator in the
-            // first place means there's nothing dark there for Safari to
-            // pick up and cache.
             position: 'fixed',
-            top: 'env(safe-area-inset-top, 0px)',
-            bottom: 'env(safe-area-inset-bottom, 0px)',
-            left: 0,
-            right: 0,
+            inset: 0,
             background: 'rgba(36,31,61,.5)',
             zIndex: 50,
             display: 'flex',

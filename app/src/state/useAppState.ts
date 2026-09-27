@@ -23,7 +23,6 @@ import {
   type LangPair,
 } from '../lib/pasteParsing'
 import { shuffle } from '../lib/shuffle'
-import { nudgeThemeColor } from '../lib/nudgeThemeColor'
 import { playCorrectSound, playWrongSound } from '../lib/sound'
 import { translateWords } from '../lib/translate'
 
@@ -201,7 +200,6 @@ export function useAppState() {
 
   function navigate(next: Screen) {
     setScreen(next)
-    nudgeThemeColor()
   }
 
   function playScreenFx(kind: ScreenFxKind) {
@@ -377,10 +375,6 @@ export function useAppState() {
   }
   function closeExitConfirm() {
     setShowExitConfirm(false)
-    // Doesn't navigate() (same quiz screen), but the exit dialog's
-    // full-bleed dark scrim just disappeared — exactly the moment Safari's
-    // chrome color is most likely to be left stale.
-    nudgeThemeColor()
   }
   function confirmExit() {
     clearScreenFx()

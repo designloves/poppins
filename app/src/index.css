@@ -38,13 +38,12 @@
 html {
   /* Always the full, static viewport — not var(--app-height). That's a
      JS measurement of the *visual* viewport and can legitimately land a
-     little short of the true safe-area-inclusive screen (viewport-fit=cover
-     extends the page under the status bar and home indicator; the JS
-     measurement doesn't always match that exactly). Sizing html/body to
-     it left a gap outside html's box showing the browser's own default
-     background instead of --bg. #frame (below) is what actually needs to
-     track --app-height to lift above the keyboard, and it's pinned via
-     position:fixed, so html/body can stay full-size safely. */
+     little short of the true screen (the JS measurement doesn't always
+     match exactly). Sizing html/body to it left a gap outside html's box
+     showing the browser's own default background instead of --bg. #frame
+     (below) is what actually needs to track --app-height to lift above
+     the keyboard, and it's pinned via position:fixed, so html/body can
+     stay full-size safely. */
   height: 100dvh;
   overflow: hidden;
 }
@@ -54,9 +53,7 @@ body {
   /* Light only: the app has no dark theme (all colors are hard-coded
      light values, no dark variants anywhere in this file). Declaring
      "light dark" told browsers this page adapts to dark mode when it
-     doesn't, which can make Safari fall back to a system-accent-tinted
-     default for its own chrome (status bar/toolbar) instead of reliably
-     honoring the app's theme-color. */
+     doesn't. */
   color-scheme: light;
   font-family: var(--b-font);
   height: 100dvh;
