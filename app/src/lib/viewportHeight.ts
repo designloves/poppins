@@ -13,12 +13,29 @@
 export function initViewportHeight() {
   function syncAppHeight() {
     try {
-      const h = window.visualViewport ? window.visualViewport.height : window.innerHeight
-      document.documentElement.style.setProperty('--app-height', `${h}px`)
+      const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight
+      // visualViewport.height can read a little larger than the truly
+      // settled visible area right at page load, before Safari's own
+      // chrome (status bar / bottom toolbar) finishes settling — a timing
+      // race that made #frame briefly taller than what's actually visible
+      // and forced a small, spurious scroll on perfectly ordinary,
+      // keyboard-closed screens. Only override the CSS default (100svh —
+      // the guaranteed-smallest, chrome-fully-expanded size, so it can
+      // never overflow the visible area) when a keyboard is plausibly
+      // open: window.innerHeight (the layout viewport; Safari doesn't
+      // shrink it for the keyboard) reads meaningfully larger than the
+      // visual viewport. A keyboard is ~250-350px tall; ordinary chrome
+      // fluctuation is much smaller than the 100px threshold here.
+      const full = window.innerHeight
+      if (full - vh > 100) {
+        document.documentElement.style.setProperty('--app-height', `${vh}px`)
+      } else {
+        document.documentElement.style.removeProperty('--app-height')
+      }
       // A short visible height (typically a small phone with the keyboard
       // open) means room is tight — some non-essential content hides
       // itself via the .short-viewport class rather than forcing a scroll.
-      document.documentElement.classList.toggle('short-viewport', h < 560)
+      document.documentElement.classList.toggle('short-viewport', vh < 560)
     } catch {
       // ignore
     }

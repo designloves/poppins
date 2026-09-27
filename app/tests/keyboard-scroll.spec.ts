@@ -6,6 +6,55 @@ async function startQuiz(page: Page) {
   await page.getByRole('button', { name: 'Svara på engelska' }).click()
 }
 
+// Regression tests for "a plain, keyboard-closed page load can force a
+// small spurious scroll": visualViewport.height can read a hair larger
+// than the truly-settled visible area right as Safari's chrome finishes
+// settling. syncAppHeight() now only overrides the CSS default (100svh,
+// the guaranteed-smallest/never-overflows size) when window.innerHeight
+// and visualViewport.height diverge by more than a keyboard-sized amount
+// — otherwise it leaves --app-height alone.
+
+test('a normal, keyboard-closed page leaves --app-height at its safe CSS default', async ({
+  page,
+}) => {
+  await page.goto('/')
+  const appHeightRaw = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
+  )
+  // The CSS default is "100svh" (unresolved, since it's never been
+  // overridden with a literal px value) — a JS override would read like
+  // "812.5px" instead.
+  expect(appHeightRaw).not.toContain('px')
+})
+
+test('a visualViewport shrink without a matching window.innerHeight shrink (a real keyboard) does override --app-height', async ({
+  page,
+}) => {
+  await startQuiz(page)
+  const full = page.viewportSize()!
+
+  // Simulates the real device signature of an on-screen keyboard: the
+  // visual viewport shrinks while the layout viewport (innerHeight)
+  // doesn't — something a plain page.setViewportSize() resize can't
+  // reproduce, since that shrinks both together.
+  await page.evaluate(
+    (shrunkHeight) => {
+      Object.defineProperty(window.visualViewport, 'height', {
+        configurable: true,
+        get: () => shrunkHeight,
+      })
+      window.visualViewport!.dispatchEvent(new Event('resize'))
+    },
+    Math.round(full.height * 0.5),
+  )
+  await page.waitForTimeout(100)
+
+  const appHeightRaw = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--app-height').trim(),
+  )
+  expect(appHeightRaw).toContain('px')
+})
+
 // Regression tests for the "quiz card (and coin pouch) scrolled
 // off-screen when the keyboard opens" bug. index.html's meta viewport
 // declares interactive-widget=resizes-content, but that's Chromium-only
@@ -94,12 +143,14 @@ test('the coin pouch stays within the shrunk frame when the keyboard opens durin
   expect(pouchBottom).toBeLessThanOrEqual(420)
 })
 
-// Regression test for "--app-height doesn't adjust to the remaining space,
+// Regression test for "the frame doesn't adjust to the remaining space,
 // so the word card and input disappear behind the keyboard": unlike the
 // tests above, this doesn't stub --app-height directly — it resizes the
-// real viewport, which fires the actual resize/visualViewport events
-// initViewportHeight() listens for, exercising the real syncAppHeight()
-// code path instead of bypassing it.
+// real viewport. A genuine window resize (unlike a real device keyboard)
+// shrinks window.innerHeight and visualViewport.height together, so
+// syncAppHeight's keyboard heuristic correctly leaves --app-height alone
+// here and CSS's own 100svh fallback handles it — this checks the actual
+// rendered result rather than that internal implementation detail.
 test('a real viewport resize (simulating the keyboard opening) shrinks the frame so the word card and input stay visible', async ({
   page,
 }) => {
@@ -110,12 +161,6 @@ test('a real viewport resize (simulating the keyboard opening) shrinks the frame
   const shrunk = Math.round(full.height * 0.5)
   await page.setViewportSize({ width: full.width, height: shrunk })
   await page.waitForTimeout(300)
-
-  const appHeight = await page.evaluate(() =>
-    parseInt(getComputedStyle(document.documentElement).getPropertyValue('--app-height')),
-  )
-  expect(appHeight).toBeLessThanOrEqual(shrunk)
-  expect(appHeight).toBeGreaterThan(shrunk - 10)
 
   const { frameHeight, cardBottom, inputBottom } = await page.evaluate(() => ({
     frameHeight: document.getElementById('frame')!.getBoundingClientRect().height,

@@ -5,7 +5,14 @@
 }
 
 :root {
-  --app-height: 100dvh;
+  /* The guaranteed-smallest viewport size (Safari's chrome fully
+     expanded), not 100dvh: dvh can transiently read a little larger than
+     the actually-settled visible area right at page load, which made
+     #frame briefly taller than what's visible and forced a small,
+     spurious scroll on ordinary, keyboard-closed screens. JS
+     (viewportHeight.ts) only overrides this with a smaller, live
+     measurement once it detects a real keyboard open. */
+  --app-height: 100svh;
   --paper: #f4f1e8;
   --paper-alt: #e9e4d2;
   --bg: #f4f1e8;
