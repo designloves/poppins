@@ -13,6 +13,15 @@ test('settings shows the not-signed-in profile card and a working back button', 
   await expect(page.getByText('Djur (Animals)')).toBeVisible()
 })
 
+test('the footer shows a real build identifier, not a hardcoded version', async ({ page }) => {
+  await page.goto('/')
+  await page.click('button[title="Inställningar"]')
+
+  // A short git commit hash, injected at build time — not "v1" or any
+  // other string that never changes between releases.
+  await expect(page.getByText(/Poppins [0-9a-f]{7} · gjord med/)).toBeVisible()
+})
+
 test('toggling sound and pronunciation switches flips their state', async ({ page }) => {
   await page.goto('/')
   await page.click('button[title="Inställningar"]')

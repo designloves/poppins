@@ -233,7 +233,7 @@ export function Settings({
         className="m-font"
         style={{ textAlign: 'center', fontSize: 11, color: 'var(--ink-soft)', marginTop: 'auto' }}
       >
-        {t(uiLang, 'madeWith')} <Heart size={12} color="#B583E8" />
+        {t(uiLang, 'madeWith', { build: __COMMIT_HASH__ })} <Heart size={12} color="#B583E8" />
       </div>
     </div>
   )
