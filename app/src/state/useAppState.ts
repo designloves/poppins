@@ -173,22 +173,32 @@ export function useAppState() {
     latestQuiz.current = { quizIdx, quizRight, quizWrong, quizWords, quizReversed }
   })
 
-  useEffect(() => {
-    const settings: PersistedSettings = {
-      avatar,
-      coins,
-      uiLang,
-      soundOn,
-      pronunciationOn,
-      equippedAccessoryId,
-    }
+  function saveSettings(settings: PersistedSettings) {
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
     } catch {
       // localStorage can throw (private browsing, quota) — losing settings
       // persistence isn't worth surfacing an error for
     }
+  }
+
+  useEffect(() => {
+    saveSettings({ avatar, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId })
   }, [avatar, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId])
+
+  function selectAvatar(next: AvatarKey) {
+    setAvatar(next)
+    // Safari only ever gets the new avatar's tint fully right (status
+    // bar, bottom bar, everything) on a fresh page load — no live update
+    // trick has proven reliable across Safari versions. A real reload is
+    // the one thing that's actually solid, so lean on it instead of
+    // chasing more workarounds: persist immediately (the state-driven
+    // effect above wouldn't flush in time otherwise) and reload shortly
+    // after, short enough to feel responsive but long enough to still
+    // show the picked avatar highlighting before the page goes away.
+    saveSettings({ avatar: next, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId })
+    setTimeout(() => window.location.reload(), 300)
+  }
 
   useEffect(() => {
     const root = document.documentElement.style
@@ -623,7 +633,7 @@ export function useAppState() {
     screen,
     navigate,
     avatar,
-    setAvatar,
+    selectAvatar,
     coins,
     addCoins,
     coinBump,
