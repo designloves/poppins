@@ -192,16 +192,22 @@ export function useAppState() {
 
   useEffect(() => {
     const root = document.documentElement.style
-    root.setProperty('--bg', AVATAR_TINTS[avatar])
+    const tint = AVATAR_TINTS[avatar]
+    root.setProperty('--bg', tint)
     root.setProperty('--accent', AVATAR_BUTTON[avatar])
     root.setProperty('--accent-text', AVATAR_BUTTON_TEXT[avatar] || 'var(--ink)')
-    // theme-color is a static meta tag, so switching avatars doesn't
-    // change what Safari's chrome samples unless we also update its
-    // content here — then nudge so Safari re-evaluates it right away
-    // instead of waiting for the next full navigate().
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', AVATAR_TINTS[avatar])
+    // iOS 26 Safari ignores the theme-color meta tag entirely and instead
+    // paints its status bar strip from <body>'s own computed
+    // background-color — but only reacts live to a direct inline-style
+    // write, not to body's "background: var(--bg)" stylesheet rule
+    // re-resolving when --bg changes above. This is what actually makes
+    // the strip update immediately on that iOS version.
+    document.body.style.backgroundColor = tint
+    // Older Safari (<=18) and Android Chrome still read the meta tag
+    // instead of body's background, so keep it in sync too and nudge so
+    // Safari re-evaluates it right away instead of waiting for the next
+    // full navigate().
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', tint)
     nudgeThemeColor()
   }, [avatar])
 

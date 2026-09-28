@@ -56,6 +56,19 @@ test("picking a different avatar updates Safari's theme-color to match", async (
     .toBe('#F0D3B4')
 })
 
+test('picking a different avatar sets an inline body background-color, for iOS 26 Safari', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await page.click('button[title="Inställningar"]')
+  await page.click('button[title="fox"]')
+
+  // iOS 26 Safari paints its status bar strip from body's own computed
+  // background-color rather than the theme-color meta tag, and only
+  // reacts live to a direct inline-style write on it.
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(240, 211, 180)')
+})
+
 test('the login button navigates to the login screen', async ({ page }) => {
   await page.goto('/')
   await page.click('button[title="Inställningar"]')
