@@ -98,6 +98,19 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* Safari 26 tints its own chrome (status bar strip, bottom bar) by
+     inspecting the DOM directly rather than theme-color or body's
+     background: it looks for a real position:fixed element that sits
+     within a few px of the viewport's top/bottom edge, spans most of
+     the width, and has its own opaque background-color. #frame already
+     satisfies the position/size requirements (it's the one element that
+     spans the full fixed viewport, top edge to bottom edge) but had no
+     background of its own — nothing here for Safari to sample, no
+     matter what body's or a meta tag's color was set to. #screen
+     (below) already paints the same color on top of this, so this is
+     purely to give Safari something valid to read; it changes nothing
+     visible. */
+  background: var(--bg);
 }
 
 #screen {

@@ -63,10 +63,26 @@ test('picking a different avatar sets an inline body background-color, for iOS 2
   await page.click('button[title="Inställningar"]')
   await page.click('button[title="fox"]')
 
-  // iOS 26 Safari paints its status bar strip from body's own computed
-  // background-color rather than the theme-color meta tag, and only
-  // reacts live to a direct inline-style write on it.
+  // body's own background-color is one of the signals Safari can read
+  // for its chrome color (kept for compatibility), though on this app's
+  // non-scrolling layout it isn't sufficient by itself — see the #frame
+  // fixed-element background below for the fix that actually works.
   await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(240, 211, 180)')
+})
+
+test("picking a different avatar updates #frame's background, which Safari 26 samples for its chrome", async ({
+  page,
+}) => {
+  await page.goto('/')
+  await page.click('button[title="Inställningar"]')
+  await page.click('button[title="fox"]')
+
+  // Safari 26 tints its status bar/bottom bar from a real position:fixed
+  // DOM element spanning the viewport's top/bottom edges with its own
+  // opaque background-color — not from theme-color or (reliably) from
+  // body's background on a page that never scrolls. #frame is that
+  // element in this app.
+  await expect(page.locator('#frame')).toHaveCSS('background-color', 'rgb(240, 211, 180)')
 })
 
 test('the login button navigates to the login screen', async ({ page }) => {
