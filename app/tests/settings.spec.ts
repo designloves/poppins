@@ -46,6 +46,16 @@ test('picking a different avatar updates it across the app', async ({ page }) =>
   await expect(page.locator('img[alt="fox"]').first()).toBeVisible()
 })
 
+test("picking a different avatar updates Safari's theme-color to match", async ({ page }) => {
+  await page.goto('/')
+  await page.click('button[title="Inställningar"]')
+  await page.click('button[title="fox"]')
+
+  await expect
+    .poll(() => page.locator('meta[name="theme-color"]').getAttribute('content'))
+    .toBe('#F0D3B4')
+})
+
 test('the login button navigates to the login screen', async ({ page }) => {
   await page.goto('/')
   await page.click('button[title="Inställningar"]')
