@@ -36,32 +36,44 @@ test('switching app language updates the whole UI immediately', async ({ page })
   await expect(page.getByText('Sound effects')).toBeVisible()
 })
 
+// Picking an avatar reloads the page shortly after (see selectAvatar() in
+// useAppState.ts) — no live update has proven reliable across Safari
+// versions, only a fresh load. Waiting for that reload's own 'load'
+// event, rather than a fixed delay, is what makes these tests exercise
+// the real behavior instead of racing a timer.
+async function pickAvatarAndWaitForReload(page: import('@playwright/test').Page, title: string) {
+  await page.click('button[title="Inställningar"]')
+  await Promise.all([page.waitForEvent('load'), page.click(`button[title="${title}"]`)])
+}
+
 test('picking a different avatar updates it across the app', async ({ page }) => {
   await page.goto('/')
-  await page.click('button[title="Inställningar"]')
-
-  await page.click('button[title="fox"]')
-  await page.click('#settings-close')
+  await pickAvatarAndWaitForReload(page, 'fox')
 
   await expect(page.locator('img[alt="fox"]').first()).toBeVisible()
 })
 
+test('picking a different avatar reloads back onto Settings, not Home', async ({ page }) => {
+  await page.goto('/')
+  await pickAvatarAndWaitForReload(page, 'fox')
+
+  // The reload is there to get Safari's chrome color right, not to kick
+  // you out of what you were doing.
+  await expect(page.getByText('Hej där!')).toBeVisible()
+})
+
 test("picking a different avatar updates Safari's theme-color to match", async ({ page }) => {
   await page.goto('/')
-  await page.click('button[title="Inställningar"]')
-  await page.click('button[title="fox"]')
+  await pickAvatarAndWaitForReload(page, 'fox')
 
-  await expect
-    .poll(() => page.locator('meta[name="theme-color"]').getAttribute('content'))
-    .toBe('#F0D3B4')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#F0D3B4')
 })
 
 test('picking a different avatar sets an inline body background-color, for iOS 26 Safari', async ({
   page,
 }) => {
   await page.goto('/')
-  await page.click('button[title="Inställningar"]')
-  await page.click('button[title="fox"]')
+  await pickAvatarAndWaitForReload(page, 'fox')
 
   // body's own background-color is one of the signals Safari can read
   // for its chrome color (kept for compatibility), though on this app's
@@ -74,15 +86,13 @@ test("picking a different avatar updates #frame's background, which Safari 26 sa
   page,
 }) => {
   await page.goto('/')
-  await page.click('button[title="Inställningar"]')
-  await page.click('button[title="fox"]')
+  await pickAvatarAndWaitForReload(page, 'fox')
 
   // Safari 26 tints its status bar/bottom bar from a real position:fixed
   // DOM element spanning the viewport's top/bottom edges with its own
   // opaque background-color — not from theme-color or (reliably) from
-  // body's background on a page that never scrolls. #frame is that
-  // element in this app, and it updates live — no reload needed — since
-  // its background is plain CSS (var(--bg)), not a JS-driven write.
+  // body's background. #frame is that element in this app; a fresh load
+  // is what actually gets Safari to read it, confirmed on a real device.
   await expect(page.locator('#frame')).toHaveCSS('background-color', 'rgb(240, 211, 180)')
 })
 

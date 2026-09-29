@@ -65,6 +65,27 @@ export type Screen =
   | 'settings'
   | 'login'
   | 'dressingRoom'
+
+// Safari only re-evaluates its own chrome color (status bar, bottom bar)
+// on a fresh page load, never live from a mid-session style change — so
+// selectAvatar() below reloads the page to get it right. A plain reload
+// would land back on the hardcoded initial screen ('home'), yanking you
+// out of Settings; stashing the screen you were on and reading it back
+// on the very next load instead keeps the reload from feeling like a
+// full reset. sessionStorage (not the persisted settings key) because
+// this is a one-shot handoff across that single reload, not state that
+// should ever outlive it — read once, then removed.
+const PENDING_SCREEN_KEY = 'poppins_pending_screen'
+
+function takePendingScreen(): Screen | null {
+  try {
+    const value = sessionStorage.getItem(PENDING_SCREEN_KEY)
+    sessionStorage.removeItem(PENDING_SCREEN_KEY)
+    return value as Screen | null
+  } catch {
+    return null
+  }
+}
 export interface QuizResult {
   right: number
   wrong: number
@@ -84,7 +105,7 @@ function speak(text: string, lang: string) {
 }
 
 export function useAppState() {
-  const [screen, setScreen] = useState<Screen>('home')
+  const [screen, setScreen] = useState<Screen>(() => takePendingScreen() ?? 'home')
   const [avatar, setAvatar] = useState<AvatarKey>(() => loadSettings().avatar ?? 'cat')
   const [coins, setCoins] = useState(() => loadSettings().coins ?? 0)
   const [uiLang, setUiLang] = useState<UiLang>(() => loadSettings().uiLang ?? 'sv')
@@ -185,6 +206,27 @@ export function useAppState() {
   useEffect(() => {
     saveSettings({ avatar, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId })
   }, [avatar, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId])
+
+  function selectAvatar(next: AvatarKey) {
+    setAvatar(next)
+    // No live update (CSS var, inline style, or theme-color meta) has
+    // gotten Safari's own chrome color right without a full page
+    // reload — confirmed on a real device (iOS 26.6.2): a fresh load
+    // always resolves correctly, switching avatars mid-session never
+    // does, however it's set. Persist the new avatar and the current
+    // screen immediately (the debounced settings-save effect wouldn't
+    // flush in time otherwise) and reload shortly after — long enough
+    // to still show the picked avatar's selection state first — landing
+    // back on this same screen instead of Home.
+    saveSettings({ avatar: next, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId })
+    try {
+      sessionStorage.setItem(PENDING_SCREEN_KEY, screen)
+    } catch {
+      // sessionStorage can throw (private browsing, quota) — worst case
+      // the reload lands on Home instead of here, not worth surfacing
+    }
+    setTimeout(() => window.location.reload(), 300)
+  }
 
   useEffect(() => {
     const root = document.documentElement.style
@@ -619,7 +661,7 @@ export function useAppState() {
     screen,
     navigate,
     avatar,
-    setAvatar,
+    selectAvatar,
     coins,
     addCoins,
     coinBump,
