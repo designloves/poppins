@@ -56,7 +56,7 @@ const UI_STRINGS = {
     showPronunciation: 'Show pronunciation',
     logOut: 'Log out',
     logIn: 'Log in',
-    madeWith: 'Poppins v1 · made with',
+    madeWith: 'Poppins {build} · made with',
     loginGreeting: 'Hej!',
     loginIntro: "I'm Poppins. Drop your email and I'll send a magic link — no passwords, promise.",
     sending: 'Sending…',
@@ -124,7 +124,7 @@ const UI_STRINGS = {
     showPronunciation: 'Spela upp ord',
     logOut: 'Logga ut',
     logIn: 'Logga in',
-    madeWith: 'Poppins v1 · gjord med',
+    madeWith: 'Poppins {build} · gjord med',
     loginGreeting: 'Hej!',
     loginIntro:
       'Jag är Poppins. Skriv in din e-post så skickar jag en magisk länk — inga lösenord, lovar.',
