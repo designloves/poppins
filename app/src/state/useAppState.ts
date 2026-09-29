@@ -106,6 +106,11 @@ function speak(text: string, lang: string) {
 
 export function useAppState() {
   const [screen, setScreen] = useState<Screen>(() => takePendingScreen() ?? 'home')
+  // True for the brief window between picking a new avatar and the
+  // reload that actually applies it everywhere (see selectAvatar()) —
+  // shown as a full-screen transition so that reload reads as a
+  // deliberate "updating your look" moment instead of the app freezing.
+  const [avatarChanging, setAvatarChanging] = useState(false)
   const [avatar, setAvatar] = useState<AvatarKey>(() => loadSettings().avatar ?? 'cat')
   const [coins, setCoins] = useState(() => loadSettings().coins ?? 0)
   const [uiLang, setUiLang] = useState<UiLang>(() => loadSettings().uiLang ?? 'sv')
@@ -209,6 +214,7 @@ export function useAppState() {
 
   function selectAvatar(next: AvatarKey) {
     setAvatar(next)
+    setAvatarChanging(true)
     // No live update (CSS var, inline style, or theme-color meta) has
     // gotten Safari's own chrome color right without a full page
     // reload — confirmed on a real device (iOS 26.6.2): a fresh load
@@ -662,6 +668,7 @@ export function useAppState() {
     navigate,
     avatar,
     selectAvatar,
+    avatarChanging,
     coins,
     addCoins,
     coinBump,

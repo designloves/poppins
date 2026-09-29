@@ -53,6 +53,19 @@ test('picking a different avatar updates it across the app', async ({ page }) =>
   await expect(page.locator('img[alt="fox"]').first()).toBeVisible()
 })
 
+test('picking a different avatar shows a themed transition before the reload', async ({ page }) => {
+  await page.goto('/')
+  await page.click('button[title="Inställningar"]')
+  await page.click('button[title="fox"]')
+
+  // Shown during the brief window before the reload that actually
+  // applies the new avatar everywhere (see selectAvatar()) — so the
+  // reload reads as a deliberate "updating your look" moment.
+  const transition = page.getByTestId('avatar-transition')
+  await expect(transition).toBeVisible()
+  await expect(transition.locator('img[alt="fox"]')).toBeVisible()
+})
+
 test('picking a different avatar reloads back onto Settings, not Home', async ({ page }) => {
   await page.goto('/')
   await pickAvatarAndWaitForReload(page, 'fox')

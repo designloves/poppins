@@ -8,6 +8,7 @@ import { useSwipeBack } from '../lib/useSwipeBack'
 
 interface SettingsProps {
   avatar: AvatarKey
+  avatarChanging: boolean
   uiLang: UiLang
   soundOn: boolean
   pronunciationOn: boolean
@@ -24,6 +25,7 @@ interface SettingsProps {
 
 export function Settings({
   avatar,
+  avatarChanging,
   uiLang,
   soundOn,
   pronunciationOn,
@@ -235,6 +237,36 @@ export function Settings({
       >
         {t(uiLang, 'madeWith')} <Heart size={12} color="#B583E8" />
       </div>
+
+      {avatarChanging && (
+        <div
+          data-testid="avatar-transition"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 60,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            // Solid the instant it appears — masking the reload is the
+            // whole point, so only the avatar itself (below) animates in;
+            // fading the background too would make it translucent for
+            // part of that window, defeating it.
+            background: AVATAR_PANEL[avatar] ?? 'var(--pink-soft)',
+          }}
+        >
+          <div
+            style={{
+              position: 'relative',
+              width: 140,
+              height: 140,
+              animation: 'pop-in 200ms ease-out',
+            }}
+          >
+            <AvatarImage avatar={avatar} diameter={140} accessoryId={equippedAccessoryId} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
