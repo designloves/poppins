@@ -6,4 +6,9 @@ export interface Accessory {
   cost: number
 }
 
-export const ACCESSORIES: Accessory[] = [{ id: 'party-hat', cost: 0 }]
+export const ACCESSORIES: Accessory[] = [
+  { id: 'party-hat', cost: 0 },
+  // Was previously baked permanently into the cat avatar's art; pulled
+  // out into a real, removable accessory.
+  { id: 'fish-hairclip', cost: 0 },
+]

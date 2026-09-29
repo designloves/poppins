@@ -2,11 +2,100 @@ import type { PointerEvent } from 'react'
 import { Button } from '@base-ui/react/button'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { AvatarImage } from '../components/AvatarImage'
-import { ACCESSORIES } from '../data/accessories'
+import { Coin } from '../components/Coin'
+import { ACCESSORIES, type Accessory } from '../data/accessories'
 import { FULL_BODY_AVATARS, type AvatarKey } from '../data/constants'
 import { accessoryName, t, type UiLang } from '../data/i18n'
 import { ArrowBack, Check } from '../icons/icons'
 import { ACCESSORY_ICONS } from '../icons/accessoryIcons'
+
+// One square tile — icon, name and price in a single frame with a single
+// tap to equip/unequip, used both in the wide-open grid and the peek
+// row so browsing and equipping work identically in either state.
+function AccessoryTile({
+  item,
+  equipped,
+  uiLang,
+  size,
+  onToggle,
+}: {
+  item: Accessory
+  equipped: boolean
+  uiLang: UiLang
+  size: number
+  onToggle: (id: string) => void
+}) {
+  const renderIcon = ACCESSORY_ICONS[item.id]
+  return (
+    <Button
+      id={`accessory-tile-${item.id}`}
+      onClick={() => onToggle(item.id)}
+      style={{
+        position: 'relative',
+        overflow: 'visible',
+        flexShrink: 0,
+        width: size,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 4,
+        padding: '6px 4px',
+        borderRadius: 14,
+        background: 'var(--paper-alt)',
+        border: equipped ? '3px solid var(--ink)' : 'var(--border-thin)',
+        boxShadow: '0 3px 0 var(--ink)',
+        cursor: 'pointer',
+      }}
+    >
+      <div
+        className="m-font"
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          color: 'var(--ink)',
+          width: '100%',
+          // Padding-right clears space for the equipped checkmark badge,
+          // which overhangs this top-right corner — without it, a name
+          // long enough to reach the edge sits half-hidden underneath.
+          padding: '0 10px 0 2px',
+          boxSizing: 'border-box',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          textAlign: 'center',
+        }}
+      >
+        {accessoryName(uiLang, item.id)}
+      </div>
+      {renderIcon?.(size * 0.55)}
+      <div className="m-font" style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)' }}>{item.cost}</span>
+        <Coin size={12} />
+      </div>
+      {equipped && (
+        <div
+          data-testid="accessory-tile-equipped"
+          style={{
+            position: 'absolute',
+            top: -6,
+            right: -6,
+            width: 22,
+            height: 22,
+            borderRadius: 999,
+            background: 'var(--mint)',
+            border: '2px solid var(--ink)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Check size={12} color="#241F3D" />
+        </div>
+      )}
+    </Button>
+  )
+}
 
 interface DressingRoomProps {
   avatar: AvatarKey
@@ -23,7 +112,7 @@ type SheetState = 'closed' | 'peek' | 'open'
 const CLOSED_HEIGHT = 64
 // Tall enough for one row of accessory tiles plus the handle, so the
 // character stays the main thing on screen most of the time.
-const PEEK_HEIGHT = 172
+const PEEK_HEIGHT = 190
 // The "fully open" state is a fraction of the whole screen's height
 // rather than a fixed px value, so it scales with the device.
 const OPEN_FRACTION = 0.5
@@ -222,52 +311,21 @@ export function DressingRoom({
               overflowY: 'auto',
               padding: '4px 16px 16px',
               display: 'flex',
-              flexDirection: 'column',
+              flexWrap: 'wrap',
               gap: 12,
+              alignContent: 'flex-start',
             }}
           >
-            {ACCESSORIES.map((item) => {
-              const equipped = equippedAccessoryId === item.id
-              const renderIcon = ACCESSORY_ICONS[item.id]
-              return (
-                <div
-                  key={item.id}
-                  className="card"
-                  style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 14 }}
-                >
-                  <div
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 14,
-                      background: 'var(--paper-alt)',
-                      border: 'var(--border-thin)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {renderIcon?.(36)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="h-font" style={{ fontSize: 17, color: 'var(--ink)' }}>
-                      {accessoryName(uiLang, item.id)}
-                    </div>
-                    <div className="m-font" style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
-                      {item.cost === 0 ? t(uiLang, 'free') : item.cost}
-                    </div>
-                  </div>
-                  <Button
-                    id={`accessory-toggle-${item.id}`}
-                    className={equipped ? 'btn btn-secondary' : 'btn btn-primary'}
-                    onClick={() => onToggle(item.id)}
-                  >
-                    {equipped ? t(uiLang, 'takeOff') : t(uiLang, 'wearIt')}
-                  </Button>
-                </div>
-              )
-            })}
+            {ACCESSORIES.map((item) => (
+              <AccessoryTile
+                key={item.id}
+                item={item}
+                equipped={equippedAccessoryId === item.id}
+                uiLang={uiLang}
+                size={84}
+                onToggle={onToggle}
+              />
+            ))}
           </div>
         )}
 
@@ -283,55 +341,16 @@ export function DressingRoom({
               padding: '0 16px 12px',
             }}
           >
-            {ACCESSORIES.map((item) => {
-              const equipped = equippedAccessoryId === item.id
-              const renderIcon = ACCESSORY_ICONS[item.id]
-              return (
-                <Button
-                  key={item.id}
-                  id={`accessory-tile-${item.id}`}
-                  title={accessoryName(uiLang, item.id)}
-                  onClick={() => onToggle(item.id)}
-                  style={{
-                    position: 'relative',
-                    overflow: 'visible',
-                    flexShrink: 0,
-                    width: 72,
-                    height: 72,
-                    borderRadius: 18,
-                    background: 'var(--paper-alt)',
-                    border: equipped ? '3px solid var(--ink)' : 'var(--border-thin)',
-                    boxShadow: '0 3px 0 var(--ink)',
-                    cursor: 'pointer',
-                    padding: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {renderIcon?.(44)}
-                  {equipped && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: -6,
-                        right: -6,
-                        width: 22,
-                        height: 22,
-                        borderRadius: 999,
-                        background: 'var(--mint)',
-                        border: '2px solid var(--ink)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Check size={12} color="#241F3D" />
-                    </div>
-                  )}
-                </Button>
-              )
-            })}
+            {ACCESSORIES.map((item) => (
+              <AccessoryTile
+                key={item.id}
+                item={item}
+                equipped={equippedAccessoryId === item.id}
+                uiLang={uiLang}
+                size={84}
+                onToggle={onToggle}
+              />
+            ))}
           </div>
         )}
       </div>
