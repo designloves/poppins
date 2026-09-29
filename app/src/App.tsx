@@ -129,7 +129,8 @@ function App() {
         onBack={() => state.navigate('home')}
         onLogin={state.openLogin}
         onLogout={state.logout}
-        onSetAvatar={state.setAvatar}
+        onSetAvatar={state.selectAvatar}
+        avatarChanging={state.avatarChanging}
         onSetUiLang={state.setUiLang}
         onToggleSound={() => state.setSoundOn((v) => !v)}
         onTogglePronunciation={() => state.setPronunciationOn((v) => !v)}

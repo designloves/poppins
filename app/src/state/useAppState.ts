@@ -65,6 +65,27 @@ export type Screen =
   | 'settings'
   | 'login'
   | 'dressingRoom'
+
+// Safari only re-evaluates its own chrome color (status bar, bottom bar)
+// on a fresh page load, never live from a mid-session style change — so
+// selectAvatar() below reloads the page to get it right. A plain reload
+// would land back on the hardcoded initial screen ('home'), yanking you
+// out of Settings; stashing the screen you were on and reading it back
+// on the very next load instead keeps the reload from feeling like a
+// full reset. sessionStorage (not the persisted settings key) because
+// this is a one-shot handoff across that single reload, not state that
+// should ever outlive it — read once, then removed.
+const PENDING_SCREEN_KEY = 'poppins_pending_screen'
+
+function takePendingScreen(): Screen | null {
+  try {
+    const value = sessionStorage.getItem(PENDING_SCREEN_KEY)
+    sessionStorage.removeItem(PENDING_SCREEN_KEY)
+    return value as Screen | null
+  } catch {
+    return null
+  }
+}
 export interface QuizResult {
   right: number
   wrong: number
@@ -84,7 +105,12 @@ function speak(text: string, lang: string) {
 }
 
 export function useAppState() {
-  const [screen, setScreen] = useState<Screen>('home')
+  const [screen, setScreen] = useState<Screen>(() => takePendingScreen() ?? 'home')
+  // True for the brief window between picking a new avatar and the
+  // reload that actually applies it everywhere (see selectAvatar()) —
+  // shown as a full-screen transition so that reload reads as a
+  // deliberate "updating your look" moment instead of the app freezing.
+  const [avatarChanging, setAvatarChanging] = useState(false)
   const [avatar, setAvatar] = useState<AvatarKey>(() => loadSettings().avatar ?? 'cat')
   const [coins, setCoins] = useState(() => loadSettings().coins ?? 0)
   const [uiLang, setUiLang] = useState<UiLang>(() => loadSettings().uiLang ?? 'sv')
@@ -173,35 +199,59 @@ export function useAppState() {
     latestQuiz.current = { quizIdx, quizRight, quizWrong, quizWords, quizReversed }
   })
 
-  useEffect(() => {
-    const settings: PersistedSettings = {
-      avatar,
-      coins,
-      uiLang,
-      soundOn,
-      pronunciationOn,
-      equippedAccessoryId,
-    }
+  function saveSettings(settings: PersistedSettings) {
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
     } catch {
       // localStorage can throw (private browsing, quota) — losing settings
       // persistence isn't worth surfacing an error for
     }
+  }
+
+  useEffect(() => {
+    saveSettings({ avatar, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId })
   }, [avatar, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId])
+
+  function selectAvatar(next: AvatarKey) {
+    setAvatar(next)
+    setAvatarChanging(true)
+    // No live update (CSS var, inline style, or theme-color meta) has
+    // gotten Safari's own chrome color right without a full page
+    // reload — confirmed on a real device (iOS 26.6.2): a fresh load
+    // always resolves correctly, switching avatars mid-session never
+    // does, however it's set. Persist the new avatar and the current
+    // screen immediately (the debounced settings-save effect wouldn't
+    // flush in time otherwise) and reload shortly after — long enough
+    // to still show the picked avatar's selection state first — landing
+    // back on this same screen instead of Home.
+    saveSettings({ avatar: next, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId })
+    try {
+      sessionStorage.setItem(PENDING_SCREEN_KEY, screen)
+    } catch {
+      // sessionStorage can throw (private browsing, quota) — worst case
+      // the reload lands on Home instead of here, not worth surfacing
+    }
+    setTimeout(() => window.location.reload(), 300)
+  }
 
   useEffect(() => {
     const root = document.documentElement.style
-    root.setProperty('--bg', AVATAR_TINTS[avatar])
+    const tint = AVATAR_TINTS[avatar]
+    root.setProperty('--bg', tint)
     root.setProperty('--accent', AVATAR_BUTTON[avatar])
     root.setProperty('--accent-text', AVATAR_BUTTON_TEXT[avatar] || 'var(--ink)')
-    // theme-color is a static meta tag, so switching avatars doesn't
-    // change what Safari's chrome samples unless we also update its
-    // content here — then nudge so Safari re-evaluates it right away
-    // instead of waiting for the next full navigate().
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', AVATAR_TINTS[avatar])
+    // iOS 26 Safari ignores the theme-color meta tag entirely and instead
+    // paints its status bar strip from <body>'s own computed
+    // background-color — but only reacts live to a direct inline-style
+    // write, not to body's "background: var(--bg)" stylesheet rule
+    // re-resolving when --bg changes above. This is what actually makes
+    // the strip update immediately on that iOS version.
+    document.body.style.backgroundColor = tint
+    // Older Safari (<=18) and Android Chrome still read the meta tag
+    // instead of body's background, so keep it in sync too and nudge so
+    // Safari re-evaluates it right away instead of waiting for the next
+    // full navigate().
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', tint)
     nudgeThemeColor()
   }, [avatar])
 
@@ -617,7 +667,8 @@ export function useAppState() {
     screen,
     navigate,
     avatar,
-    setAvatar,
+    selectAvatar,
+    avatarChanging,
     coins,
     addCoins,
     coinBump,
