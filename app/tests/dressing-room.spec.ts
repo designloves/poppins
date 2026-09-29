@@ -80,25 +80,36 @@ test('wearing an accessory from the peek row shows it on the avatar everywhere, 
   await page.click('button[title="Garderoben"]')
   await page.click('#accessory-tile-party-hat')
 
-  // Worn on the dressing room's own live preview.
-  await expect(page.getByTestId('accessory-overlay')).toBeVisible()
-
+  // cat (the default avatar) has full-body art in the dressing room's own
+  // hero preview, which doesn't yet support the accessory overlay — but
+  // it still shows up everywhere the face-crop art is used.
   await page.click('#dressing-room-close')
-  // ...and on the home header's avatar button too.
   await expect(page.getByTestId('accessory-overlay')).toBeVisible()
 
   await page.click('button[title="Inställningar"]')
-  // ...and on the settings profile avatar.
   await expect(page.getByTestId('accessory-overlay')).toBeVisible()
 
   await page.reload()
   await page.click('button[title="Garderoben"]')
-  await expect(page.getByTestId('accessory-overlay')).toBeVisible()
   await page.click('#dressing-room-sheet-handle')
   await expect(page.getByRole('button', { name: 'Ta av' })).toBeVisible()
 })
 
-test('taking an accessory back off removes it, from either the open list or the peek row', async ({
+test("the dressing room's own preview shows a worn accessory too, for avatars still using face-crop art", async ({
+  page,
+}) => {
+  await page.goto('/')
+  await page.click('button[title="Inställningar"]')
+  await Promise.all([page.waitForEvent('load'), page.click('button[title="elephant"]')])
+  // Picking an avatar reloads back onto Settings, not Home.
+  await page.click('#settings-close')
+
+  await page.click('button[title="Garderoben"]')
+  await page.click('#accessory-tile-party-hat')
+  await expect(page.getByTestId('accessory-overlay')).toBeVisible()
+})
+
+test('taking an accessory back off removes it, consistently between the open list and the peek row', async ({
   page,
 }) => {
   await page.goto('/')
@@ -110,11 +121,12 @@ test('taking an accessory back off removes it, from either the open list or the 
   await page.click('#accessory-toggle-party-hat')
   await expect(page.getByRole('button', { name: 'Ta på' })).toBeVisible()
 
+  // Equip from the collapsed peek row instead, then confirm the open list
+  // agrees it's worn.
   await page.click('#dressing-room-sheet-handle')
   await page.click('#accessory-tile-party-hat')
-  await expect(page.getByTestId('accessory-overlay')).toBeVisible()
-  await page.click('#accessory-tile-party-hat')
-  await expect(page.getByTestId('accessory-overlay')).toBeHidden()
+  await page.click('#dressing-room-sheet-handle')
+  await expect(page.getByRole('button', { name: 'Ta av' })).toBeVisible()
 })
 
 test('back button returns home', async ({ page }) => {

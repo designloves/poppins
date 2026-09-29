@@ -3,7 +3,7 @@ import { Button } from '@base-ui/react/button'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { AvatarImage } from '../components/AvatarImage'
 import { ACCESSORIES } from '../data/accessories'
-import type { AvatarKey } from '../data/constants'
+import { FULL_BODY_AVATARS, type AvatarKey } from '../data/constants'
 import { accessoryName, t, type UiLang } from '../data/i18n'
 import { ArrowBack, Check } from '../icons/icons'
 import { ACCESSORY_ICONS } from '../icons/accessoryIcons'
@@ -147,7 +147,19 @@ export function DressingRoom({
         }}
       >
         <div style={{ position: 'relative', width: 'min(72vw, 300px)', aspectRatio: '1' }}>
-          <AvatarImage avatar={avatar} diameter={270} accessoryId={equippedAccessoryId} />
+          {FULL_BODY_AVATARS.has(avatar) ? (
+            // Full-body art is a complete standing pose, meant to be shown
+            // in full rather than cropped/oversized the way the face-only
+            // art is — no accessory overlay yet, since AccessoryOverlay's
+            // positioning assumes that face-crop composition.
+            <img
+              src={`avatars/full/${avatar}.png`}
+              alt={avatar}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+            />
+          ) : (
+            <AvatarImage avatar={avatar} diameter={270} accessoryId={equippedAccessoryId} />
+          )}
         </div>
       </div>
 
