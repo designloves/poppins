@@ -25,9 +25,10 @@ test('opens on the peek state: a big avatar with the wardrobe peeking from the b
     'data-sheet-state',
     'peek',
   )
-  // Same square tile — name, icon and price — shows in peek as in open.
+  // Icon-only tile — the name/price header above the row names whichever
+  // item is selected, defaulting to the first one.
   await expect(page.locator('#accessory-tile-party-hat')).toBeVisible()
-  await expect(page.getByText('Partyhatt')).toBeVisible()
+  await expect(page.getByTestId('dressing-room-item-header')).toContainText('Partyhatt')
 })
 
 test('tapping the handle opens the wider grid, tapping again collapses it back to peek', async ({
@@ -70,13 +71,28 @@ test('dragging the handle down closes the sheet to a peeking bar, tapping it reo
   )
 })
 
-test('a tile shows its price as a number next to a coin, not "free" text', async ({ page }) => {
+test("the header shows the selected item's price as a number next to a coin, not free text", async ({
+  page,
+}) => {
   await page.goto('/')
   await page.click('button[title="Garderoben"]')
 
-  const tile = page.locator('#accessory-tile-party-hat')
-  await expect(tile).toContainText('0')
-  await expect(tile.locator('svg')).not.toHaveCount(0)
+  const header = page.getByTestId('dressing-room-item-header')
+  await expect(header).toContainText('Partyhatt')
+  await expect(header).toContainText('0')
+  await expect(header.locator('svg')).not.toHaveCount(0)
+})
+
+test('tapping a different tile updates the header to name that item instead', async ({ page }) => {
+  await page.goto('/')
+  await page.click('button[title="Garderoben"]')
+
+  const header = page.getByTestId('dressing-room-item-header')
+  await expect(header).toContainText('Partyhatt')
+
+  await page.click('#accessory-tile-fish-hairclip')
+  await expect(header).toContainText('Fiskspänne')
+  await expect(header).not.toContainText('Partyhatt')
 })
 
 test('wearing an accessory shows it on the avatar everywhere, and persists across a reload', async ({
