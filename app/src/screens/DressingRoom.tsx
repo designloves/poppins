@@ -9,10 +9,9 @@ import { accessoryName, t, type UiLang } from '../data/i18n'
 import { ArrowBack, Check } from '../icons/icons'
 import { ACCESSORY_ICONS } from '../icons/accessoryIcons'
 
-// One square tile — just the icon, in a single frame, with a single tap
-// to select it (see the name/price header above the tiles) and toggle
-// equipping it. Used both in the wide-open grid and the peek row so
-// browsing and equipping work identically in either state.
+// One square tile — icon, name and price in a single frame with a single
+// tap to equip/unequip, used both in the wide-open grid and the peek
+// row so browsing and equipping work identically in either state.
 function AccessoryTile({
   item,
   equipped,
@@ -30,25 +29,50 @@ function AccessoryTile({
   return (
     <Button
       id={`accessory-tile-${item.id}`}
-      title={accessoryName(uiLang, item.id)}
       onClick={() => onToggle(item.id)}
       style={{
         position: 'relative',
         overflow: 'visible',
         flexShrink: 0,
         width: size,
-        height: size,
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 16,
+        justifyContent: 'space-between',
+        gap: 4,
+        padding: '6px 4px',
+        borderRadius: 14,
         background: 'var(--paper-alt)',
         border: equipped ? '3px solid var(--ink)' : 'var(--border-thin)',
         boxShadow: '0 3px 0 var(--ink)',
         cursor: 'pointer',
       }}
     >
-      {renderIcon?.(size * 0.62)}
+      <div
+        className="m-font"
+        style={{
+          fontSize: 10,
+          fontWeight: 700,
+          color: 'var(--ink)',
+          width: '100%',
+          // Padding-right clears space for the equipped checkmark badge,
+          // which overhangs this top-right corner — without it, a name
+          // long enough to reach the edge sits half-hidden underneath.
+          padding: '0 10px 0 2px',
+          boxSizing: 'border-box',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          textAlign: 'center',
+        }}
+      >
+        {accessoryName(uiLang, item.id)}
+      </div>
+      {renderIcon?.(size * 0.55)}
+      <div className="m-font" style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)' }}>{item.cost}</span>
+        <Coin size={12} />
+      </div>
       {equipped && (
         <div
           data-testid="accessory-tile-equipped"
@@ -86,10 +110,9 @@ type SheetState = 'closed' | 'peek' | 'open'
 // Tall enough for just the handle/label — tap this to bring the sheet
 // back once it's been dragged all the way down.
 const CLOSED_HEIGHT = 64
-// Tall enough for the name/price header plus one row of accessory tiles
-// plus the handle, so the character stays the main thing on screen most
-// of the time.
-const PEEK_HEIGHT = 216
+// Tall enough for one row of accessory tiles plus the handle, so the
+// character stays the main thing on screen most of the time.
+const PEEK_HEIGHT = 190
 // The "fully open" state is a fraction of the whole screen's height
 // rather than a fixed px value, so it scales with the device.
 const OPEN_FRACTION = 0.5
@@ -97,7 +120,6 @@ const OPEN_FRACTION = 0.5
 // handle is treated as a tap (cycling open/peek/closed) rather than a
 // drag (snapping to whichever of the three it ended up closest to).
 const DRAG_THRESHOLD = 6
-const TILE_SIZE = 92
 
 export function DressingRoom({
   avatar,
@@ -108,19 +130,6 @@ export function DressingRoom({
 }: DressingRoomProps) {
   const [sheetState, setSheetState] = useState<SheetState>('peek')
   const [dragHeight, setDragHeight] = useState<number | null>(null)
-  // Whichever tile was tapped most recently — shown in the header above
-  // the tiles, independent of whether that tap ended up equipping or
-  // unequipping it. Starts on whatever's already worn, or just the first
-  // item if nothing is.
-  const [selectedId, setSelectedId] = useState<string | null>(
-    equippedAccessoryId ?? ACCESSORIES[0]?.id ?? null,
-  )
-  const selectedItem = ACCESSORIES.find((item) => item.id === selectedId) ?? ACCESSORIES[0]
-
-  function selectAndToggle(id: string) {
-    setSelectedId(id)
-    onToggle(id)
-  }
   // Measured in an effect rather than read from the ref during render —
   // openHeight() below is called while rendering (to size the sheet when
   // sheetState is 'open'), and reading a ref's .current there instead of
@@ -221,23 +230,12 @@ export function DressingRoom({
           flex: 1,
           minHeight: 0,
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'center',
           padding: '0 16px',
-          // Top-aligned rather than centered, with headroom above the
-          // character itself — pulls it up and away from the sheet below,
-          // and leaves room for a hat or similar to peek above its head
-          // once accessories can render on this full-body view.
-          paddingTop: 28,
-          // The avatar below is sized off width alone, so on a short
-          // viewport (or with the sheet 'open', shrinking this flex area)
-          // it can be taller than the space actually left for it —
-          // without clipping that overflow here, it visually overlaps the
-          // sheet and steals pointer events from the handle underneath it.
-          overflow: 'hidden',
         }}
       >
-        <div style={{ position: 'relative', width: '100%', aspectRatio: '1', flexShrink: 0 }}>
+        <div style={{ position: 'relative', width: 'min(72vw, 300px)', aspectRatio: '1' }}>
           {FULL_BODY_AVATARS.has(avatar) ? (
             // Full-body art is a complete standing pose, meant to be shown
             // in full rather than cropped/oversized the way the face-only
@@ -249,7 +247,7 @@ export function DressingRoom({
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
             />
           ) : (
-            <AvatarImage avatar={avatar} diameter={340} accessoryId={equippedAccessoryId} />
+            <AvatarImage avatar={avatar} diameter={270} accessoryId={equippedAccessoryId} />
           )}
         </div>
       </div>
@@ -305,30 +303,6 @@ export function DressingRoom({
           )}
         </div>
 
-        {sheetState !== 'closed' && selectedItem && (
-          <div
-            data-testid="dressing-room-item-header"
-            style={{
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              padding: '0 16px 10px',
-            }}
-          >
-            <span className="h-font" style={{ fontSize: 17, color: 'var(--ink)' }}>
-              {accessoryName(uiLang, selectedItem.id)}
-            </span>
-            <span className="m-font" style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>
-                {selectedItem.cost}
-              </span>
-              <Coin size={14} />
-            </span>
-          </div>
-        )}
-
         {sheetState === 'open' && (
           <div
             style={{
@@ -348,8 +322,8 @@ export function DressingRoom({
                 item={item}
                 equipped={equippedAccessoryId === item.id}
                 uiLang={uiLang}
-                size={TILE_SIZE}
-                onToggle={selectAndToggle}
+                size={84}
+                onToggle={onToggle}
               />
             ))}
           </div>
@@ -373,8 +347,8 @@ export function DressingRoom({
                 item={item}
                 equipped={equippedAccessoryId === item.id}
                 uiLang={uiLang}
-                size={TILE_SIZE}
-                onToggle={selectAndToggle}
+                size={84}
+                onToggle={onToggle}
               />
             ))}
           </div>
