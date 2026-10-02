@@ -110,12 +110,16 @@ interface DressingRoomProps {
 type SheetState = 'closed' | 'peek' | 'open'
 
 // Tall enough for just the handle/label — tap this to bring the sheet
-// back once it's been dragged all the way down.
-const CLOSED_HEIGHT = 64
-// The handle area's own height (20px top padding + 5px bar + 12px bottom
+// back once it's been dragged all the way down. Needs to clear the
+// handle's own (now bigger) padding plus the label line below the bar.
+const CLOSED_HEIGHT = 88
+// The handle area's own height (28px top padding + 10px bar + 18px bottom
 // padding) when it's just the bar, no label — i.e. whenever the sheet
-// isn't 'closed'.
-const HANDLE_HEIGHT = 37
+// isn't 'closed'. Generous on purpose: the whole padded area is the drag
+// target (the pointer handlers sit on this container, not just the bar
+// graphic), so padding this much bigger than the bar itself is what
+// actually makes the sheet easier to grab, not just prettier to look at.
+const HANDLE_HEIGHT = 56
 const TILES_PER_ROW = 4
 const TILE_GAP = 10
 const ROW_TOP_PADDING = 8
@@ -325,17 +329,22 @@ export function DressingRoom({
             flexDirection: 'column',
             alignItems: 'center',
             gap: 6,
-            padding: '20px 0 12px',
+            padding: '28px 0 18px',
             cursor: 'grab',
           }}
         >
           <div
             style={{
-              width: 40,
-              height: 5,
+              width: 60,
+              height: 10,
               borderRadius: 999,
               background: 'var(--paper-alt)',
-              border: '1.5px solid var(--ink)',
+              border: 'var(--border-thin)',
+              // The same raised-pill look as the toggle switch (.switch in
+              // index.css) and every other tappable control here — a flat
+              // line read as a scroll indicator, not something to grab;
+              // this reads as an actual handle.
+              boxShadow: '0 3px 0 var(--ink)',
             }}
           />
           {sheetState === 'closed' && (
