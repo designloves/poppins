@@ -9,12 +9,13 @@ import { accessoryName, t, type UiLang } from '../data/i18n'
 import { ArrowBack, Check } from '../icons/icons'
 import { ACCESSORY_ICONS } from '../icons/accessoryIcons'
 
-// One square tile — icon, name and price in a single frame with a single
-// tap to equip/unequip, used both in the wide-open grid and the peek
-// row so browsing and equipping work identically in either state. Always
-// exactly `size` x `size`: the name and price rows are fixed-height, and
-// the icon sits centered in whatever flexible space is left between them,
-// so the square holds regardless of the tile's actual size.
+// One square tile — just the icon, maximized, with the price below it —
+// used both in the wide-open grid and the peek row so browsing and
+// equipping work identically in either state. Always exactly `size` x
+// `size`: the price row is a fixed height, and the icon fills whatever
+// space is left above it, so the square holds regardless of the tile's
+// actual size. The item's name isn't shown — it'd cost more room than
+// it's worth here — but stays available as the tile's accessible name.
 function AccessoryTile({
   item,
   equipped,
@@ -34,6 +35,7 @@ function AccessoryTile({
   return (
     <Button
       id={`accessory-tile-${item.id}`}
+      title={accessoryName(uiLang, item.id)}
       onClick={() => onToggle(item.id)}
       style={{
         position: 'relative',
@@ -55,27 +57,6 @@ function AccessoryTile({
       }}
     >
       <div
-        className="m-font"
-        style={{
-          flexShrink: 0,
-          fontSize: 9,
-          fontWeight: 700,
-          color: 'var(--ink)',
-          width: '100%',
-          // Padding-right clears space for the equipped checkmark badge,
-          // which overhangs this top-right corner — without it, a name
-          // long enough to reach the edge sits half-hidden underneath.
-          padding: '0 10px 0 2px',
-          boxSizing: 'border-box',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          textAlign: 'center',
-        }}
-      >
-        {accessoryName(uiLang, item.id)}
-      </div>
-      <div
         style={{
           flex: 1,
           minHeight: 0,
@@ -85,7 +66,7 @@ function AccessoryTile({
           justifyContent: 'center',
         }}
       >
-        {renderIcon?.(size * 0.5)}
+        {renderIcon?.(size * 0.62)}
       </div>
       <div
         className="m-font"
@@ -137,11 +118,13 @@ const CLOSED_HEIGHT = 64
 const HANDLE_HEIGHT = 37
 const TILES_PER_ROW = 4
 const TILE_GAP = 10
-// Same left/right inset as the header above the sheet, so the tile rows
-// line up with it instead of sitting at their own, different margin.
-const ROW_SIDE_PADDING = 16
 const ROW_TOP_PADDING = 8
 const ROW_BOTTOM_PADDING = 12
+// The gap from the sheet's left/right edge to a tile should match the gap
+// from its top edge to a tile (the handle plus the row's own top padding)
+// rather than being its own, smaller number — otherwise the top reads as
+// noticeably more padded than the sides, even though both are "padding."
+const ROW_SIDE_PADDING = HANDLE_HEIGHT + ROW_TOP_PADDING
 // Caps the tile (and so the sheet) from growing unreasonably large on a
 // wide viewport — tiles are sized off the available width so exactly 4
 // fit per row, but that width is the whole app frame, which isn't capped

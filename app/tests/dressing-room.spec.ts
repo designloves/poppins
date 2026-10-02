@@ -25,9 +25,11 @@ test('opens on the peek state: a big avatar with the wardrobe peeking from the b
     'data-sheet-state',
     'peek',
   )
-  // Same square tile — name, icon and price — shows in peek as in open.
-  await expect(page.locator('#accessory-tile-party-hat')).toBeVisible()
-  await expect(page.getByText('Partyhatt')).toBeVisible()
+  // Same square tile — icon and price, name as its accessible title —
+  // shows in peek as in open.
+  const tile = page.locator('#accessory-tile-party-hat')
+  await expect(tile).toBeVisible()
+  await expect(tile).toHaveAttribute('title', 'Partyhatt')
 })
 
 test('tapping the handle opens the wider grid, tapping again collapses it back to peek', async ({
