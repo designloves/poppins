@@ -11,7 +11,10 @@ import { ACCESSORY_ICONS } from '../icons/accessoryIcons'
 
 // One square tile — icon, name and price in a single frame with a single
 // tap to equip/unequip, used both in the wide-open grid and the peek
-// row so browsing and equipping work identically in either state.
+// row so browsing and equipping work identically in either state. Always
+// exactly `size` x `size`: the name and price rows are fixed-height, and
+// the icon sits centered in whatever flexible space is left between them,
+// so the square holds regardless of the tile's actual size.
 function AccessoryTile({
   item,
   equipped,
@@ -35,12 +38,13 @@ function AccessoryTile({
         overflow: 'visible',
         flexShrink: 0,
         width: size,
+        height: size,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 4,
-        padding: '6px 4px',
+        gap: 2,
+        padding: 4,
+        boxSizing: 'border-box',
         borderRadius: 14,
         background: 'var(--paper-alt)',
         border: equipped ? '3px solid var(--ink)' : 'var(--border-thin)',
@@ -51,7 +55,8 @@ function AccessoryTile({
       <div
         className="m-font"
         style={{
-          fontSize: 10,
+          flexShrink: 0,
+          fontSize: 9,
           fontWeight: 700,
           color: 'var(--ink)',
           width: '100%',
@@ -68,10 +73,24 @@ function AccessoryTile({
       >
         {accessoryName(uiLang, item.id)}
       </div>
-      {renderIcon?.(size * 0.55)}
-      <div className="m-font" style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)' }}>{item.cost}</span>
-        <Coin size={12} />
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {renderIcon?.(size * 0.5)}
+      </div>
+      <div
+        className="m-font"
+        style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}
+      >
+        <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{item.cost}</span>
+        <Coin size={18} />
       </div>
       {equipped && (
         <div
@@ -110,12 +129,20 @@ type SheetState = 'closed' | 'peek' | 'open'
 // Tall enough for just the handle/label — tap this to bring the sheet
 // back once it's been dragged all the way down.
 const CLOSED_HEIGHT = 64
-// Tall enough for one row of accessory tiles plus the handle, so the
-// character stays the main thing on screen most of the time.
-const PEEK_HEIGHT = 190
-// The "fully open" state is a fraction of the whole screen's height
-// rather than a fixed px value, so it scales with the device.
-const OPEN_FRACTION = 0.5
+// The handle area's own height (10px top padding + 5px bar + 6px bottom
+// padding) when it's just the bar, no label — i.e. whenever the sheet
+// isn't 'closed'.
+const HANDLE_HEIGHT = 21
+const TILES_PER_ROW = 4
+const TILE_GAP = 10
+const ROW_SIDE_PADDING = 16
+const ROW_TOP_PADDING = 4
+const ROW_BOTTOM_PADDING = 12
+// Caps the tile (and so the sheet) from growing unreasonably large on a
+// wide viewport — tiles are sized off the available width so exactly 4
+// fit per row, but that width is the whole app frame, which isn't capped
+// to a phone size itself.
+const MAX_TILE_SIZE = 120
 // Below this many px of pointer movement, a press-and-release on the
 // handle is treated as a tap (cycling open/peek/closed) rather than a
 // drag (snapping to whichever of the three it ended up closest to).
@@ -131,30 +158,45 @@ export function DressingRoom({
   const [sheetState, setSheetState] = useState<SheetState>('peek')
   const [dragHeight, setDragHeight] = useState<number | null>(null)
   // Measured in an effect rather than read from the ref during render —
-  // openHeight() below is called while rendering (to size the sheet when
-  // sheetState is 'open'), and reading a ref's .current there instead of
-  // this state would be the same value but off-limits during render.
-  const [containerHeight, setContainerHeight] = useState(0)
+  // tileSize() below is called while rendering (to size the tiles and the
+  // sheet itself), and reading a ref's .current there instead of this
+  // state would be the same value but off-limits during render.
+  const [containerWidth, setContainerWidth] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ startY: number; startHeight: number; moved: boolean } | null>(null)
 
   useLayoutEffect(() => {
     function measure() {
-      if (containerRef.current) setContainerHeight(containerRef.current.clientHeight)
+      if (containerRef.current) setContainerWidth(containerRef.current.clientWidth)
     }
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
   }, [])
 
-  function openHeight() {
-    return Math.round((containerHeight || window.innerHeight) * OPEN_FRACTION)
+  // Square tiles, sized off the available width so exactly 4 fit per row
+  // (with padding) in the open grid — the peek row uses the very same
+  // size, so a tile looks identical whichever state it's shown in.
+  function tileSize() {
+    const width = containerWidth || window.innerWidth
+    const available = width - ROW_SIDE_PADDING * 2 - TILE_GAP * (TILES_PER_ROW - 1)
+    return Math.min(MAX_TILE_SIZE, Math.floor(available / TILES_PER_ROW))
+  }
+
+  // The sheet's content height for a given number of tile rows — the
+  // handle bar above it, plus that many square tiles and the gaps/padding
+  // around them.
+  function rowsHeight(rows: number) {
+    const size = tileSize()
+    return (
+      HANDLE_HEIGHT + ROW_TOP_PADDING + rows * size + (rows - 1) * TILE_GAP + ROW_BOTTOM_PADDING
+    )
   }
 
   function heightFor(state: SheetState) {
     if (state === 'closed') return CLOSED_HEIGHT
-    if (state === 'peek') return PEEK_HEIGHT
-    return openHeight()
+    if (state === 'peek') return rowsHeight(1)
+    return rowsHeight(TILES_PER_ROW)
   }
 
   function cycleSheet() {
@@ -171,7 +213,7 @@ export function DressingRoom({
     if (!drag) return
     const delta = drag.startY - e.clientY
     if (Math.abs(delta) > DRAG_THRESHOLD) drag.moved = true
-    const max = openHeight()
+    const max = rowsHeight(TILES_PER_ROW)
     setDragHeight(Math.min(max, Math.max(CLOSED_HEIGHT, drag.startHeight + delta)))
   }
 
@@ -185,11 +227,10 @@ export function DressingRoom({
       return
     }
     const current = dragHeight ?? drag.startHeight
-    const max = openHeight()
     const candidates: [SheetState, number][] = [
       ['closed', CLOSED_HEIGHT],
-      ['peek', PEEK_HEIGHT],
-      ['open', max],
+      ['peek', rowsHeight(1)],
+      ['open', rowsHeight(TILES_PER_ROW)],
     ]
     candidates.sort((a, b) => Math.abs(current - a[1]) - Math.abs(current - b[1]))
     setSheetState(candidates[0][0])
@@ -309,10 +350,10 @@ export function DressingRoom({
               flex: 1,
               minHeight: 0,
               overflowY: 'auto',
-              padding: '4px 16px 16px',
+              padding: `${ROW_TOP_PADDING}px ${ROW_SIDE_PADDING}px ${ROW_BOTTOM_PADDING}px`,
               display: 'flex',
               flexWrap: 'wrap',
-              gap: 12,
+              gap: TILE_GAP,
               alignContent: 'flex-start',
             }}
           >
@@ -322,7 +363,7 @@ export function DressingRoom({
                 item={item}
                 equipped={equippedAccessoryId === item.id}
                 uiLang={uiLang}
-                size={84}
+                size={tileSize()}
                 onToggle={onToggle}
               />
             ))}
@@ -337,8 +378,8 @@ export function DressingRoom({
               overflowX: 'auto',
               overflowY: 'hidden',
               display: 'flex',
-              gap: 12,
-              padding: '0 16px 12px',
+              gap: TILE_GAP,
+              padding: `${ROW_TOP_PADDING}px ${ROW_SIDE_PADDING}px ${ROW_BOTTOM_PADDING}px`,
             }}
           >
             {ACCESSORIES.map((item) => (
@@ -347,7 +388,7 @@ export function DressingRoom({
                 item={item}
                 equipped={equippedAccessoryId === item.id}
                 uiLang={uiLang}
-                size={84}
+                size={tileSize()}
                 onToggle={onToggle}
               />
             ))}
