@@ -1,14 +1,84 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 
-test('the dressing room shows the starter accessory and previews it on the avatar', async ({
+// Simulates a drag on the bottom sheet's handle by dispatching real mouse
+// input — Chromium translates this into the pointer events the sheet
+// itself listens for (onPointerDown/Move/Up), same as a touch would.
+async function dragHandle(page: Page, deltaY: number) {
+  const handle = page.locator('#dressing-room-sheet-handle')
+  const box = await handle.boundingBox()
+  if (!box) throw new Error('handle not found')
+  const x = box.x + box.width / 2
+  const y = box.y + box.height / 2
+  await page.mouse.move(x, y)
+  await page.mouse.down()
+  await page.mouse.move(x, y + deltaY, { steps: 10 })
+  await page.mouse.up()
+}
+
+test('opens on the peek state: a big avatar with the wardrobe peeking from the bottom', async ({
   page,
 }) => {
   await page.goto('/')
   await page.click('button[title="Garderoben"]')
 
-  await expect(page.getByText('Partyhatt')).toBeVisible()
-  await expect(page.getByText('Gratis')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Ta på' })).toBeVisible()
+  await expect(page.locator('[data-testid="dressing-room-sheet"]')).toHaveAttribute(
+    'data-sheet-state',
+    'peek',
+  )
+  // Same square tile — icon and price, name as its accessible title —
+  // shows in peek as in open.
+  const tile = page.locator('#accessory-tile-party-hat')
+  await expect(tile).toBeVisible()
+  await expect(tile).toHaveAttribute('title', 'Partyhatt')
+})
+
+test('tapping the handle opens the wider grid, tapping again collapses it back to peek', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await page.click('button[title="Garderoben"]')
+
+  await page.click('#dressing-room-sheet-handle')
+  await expect(page.locator('[data-testid="dressing-room-sheet"]')).toHaveAttribute(
+    'data-sheet-state',
+    'open',
+  )
+  await expect(page.locator('#accessory-tile-party-hat')).toBeVisible()
+
+  await page.click('#dressing-room-sheet-handle')
+  await expect(page.locator('[data-testid="dressing-room-sheet"]')).toHaveAttribute(
+    'data-sheet-state',
+    'peek',
+  )
+})
+
+test('dragging the handle down closes the sheet to a peeking bar, tapping it reopens to peek', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await page.click('button[title="Garderoben"]')
+
+  await dragHandle(page, 200)
+  await expect(page.locator('[data-testid="dressing-room-sheet"]')).toHaveAttribute(
+    'data-sheet-state',
+    'closed',
+  )
+  await expect(page.locator('#dressing-room-sheet-handle').getByText('Garderoben')).toBeVisible()
+
+  await page.click('#dressing-room-sheet-handle')
+  await expect(page.locator('[data-testid="dressing-room-sheet"]')).toHaveAttribute(
+    'data-sheet-state',
+    'peek',
+  )
+})
+
+test('a tile shows its price as a number next to a coin, not "free" text', async ({ page }) => {
+  await page.goto('/')
+  await page.click('button[title="Garderoben"]')
+
+  const tile = page.locator('#accessory-tile-party-hat')
+  await expect(tile).toContainText('0')
+  await expect(tile.locator('svg')).not.toHaveCount(0)
 })
 
 test('wearing an accessory shows it on the avatar everywhere, and persists across a reload', async ({
@@ -16,34 +86,54 @@ test('wearing an accessory shows it on the avatar everywhere, and persists acros
 }) => {
   await page.goto('/')
   await page.click('button[title="Garderoben"]')
-  await page.click('#accessory-toggle-party-hat')
+  await page.click('#accessory-tile-party-hat')
 
-  await expect(page.getByRole('button', { name: 'Ta av' })).toBeVisible()
-  // Worn on the dressing room's own live preview.
-  await expect(page.getByTestId('accessory-overlay')).toBeVisible()
+  await expect(page.getByTestId('accessory-tile-equipped')).toBeVisible()
 
+  // cat (the default avatar) has full-body art in the dressing room's own
+  // hero preview, which doesn't yet support the accessory overlay — but
+  // it still shows up everywhere the face-crop art is used.
   await page.click('#dressing-room-close')
-  // ...and on the home header's avatar button too.
   await expect(page.getByTestId('accessory-overlay')).toBeVisible()
 
   await page.click('button[title="Inställningar"]')
-  // ...and on the settings profile avatar.
   await expect(page.getByTestId('accessory-overlay')).toBeVisible()
 
   await page.reload()
   await page.click('button[title="Garderoben"]')
-  await expect(page.getByRole('button', { name: 'Ta av' })).toBeVisible()
+  await expect(page.getByTestId('accessory-tile-equipped')).toBeVisible()
+})
+
+test("the dressing room's own preview shows a worn accessory too, for avatars still using face-crop art", async ({
+  page,
+}) => {
+  await page.goto('/')
+  await page.click('button[title="Inställningar"]')
+  await Promise.all([page.waitForEvent('load'), page.click('button[title="elephant"]')])
+  // Picking an avatar reloads back onto Settings, not Home.
+  await page.click('#settings-close')
+
+  await page.click('button[title="Garderoben"]')
+  await page.click('#accessory-tile-party-hat')
   await expect(page.getByTestId('accessory-overlay')).toBeVisible()
 })
 
-test('taking an accessory back off removes it', async ({ page }) => {
+test('taking an accessory back off removes it, consistently between peek and open', async ({
+  page,
+}) => {
   await page.goto('/')
   await page.click('button[title="Garderoben"]')
-  await page.click('#accessory-toggle-party-hat')
-  await expect(page.getByRole('button', { name: 'Ta av' })).toBeVisible()
+  await page.click('#accessory-tile-party-hat')
+  await expect(page.getByTestId('accessory-tile-equipped')).toBeVisible()
 
-  await page.click('#accessory-toggle-party-hat')
-  await expect(page.getByRole('button', { name: 'Ta på' })).toBeVisible()
+  await page.click('#dressing-room-sheet-handle')
+  await expect(page.getByTestId('accessory-tile-equipped')).toBeVisible()
+
+  await page.click('#accessory-tile-party-hat')
+  await expect(page.getByTestId('accessory-tile-equipped')).toBeHidden()
+
+  await page.click('#dressing-room-sheet-handle')
+  await expect(page.getByTestId('accessory-tile-equipped')).toBeHidden()
 })
 
 test('back button returns home', async ({ page }) => {

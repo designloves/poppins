@@ -162,6 +162,18 @@ export const AVATAR_BUTTON_TEXT: Partial<Record<AvatarKey, string>> = { jellyfis
 // ones — kept in parity with the legacy app's own asset versioning.
 export const AVATAR_ASSET_VERSION = 3
 
+// Avatar keys with full-body art (public/avatars/full/<key>.png), used for
+// the dressing room's large hero display. Everything else still only has
+// the face-crop art (public/avatars/<key>.png) used everywhere else, and
+// falls back to it in the dressing room too until more full-body art
+// arrives.
+export const FULL_BODY_AVATARS: ReadonlySet<AvatarKey> = new Set<AvatarKey>([
+  'cat',
+  'bunny',
+  'owl',
+  'lion',
+])
+
 export const COIN_BUMP_MS = 380
 // Every correct answer earns COIN_REWARD — including each repetition of
 // the "write it 5 times" remediation after a wrong answer, rewarding

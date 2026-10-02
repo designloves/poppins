@@ -66,10 +66,8 @@ const UI_STRINGS = {
     magicLinkSent: 'I sent a sparkly link to {email}. Tap it to come on in.',
     clickedItLetMeIn: 'I clicked it — let me in',
     dressingRoom: 'Dressing room',
-    wearIt: 'Wear it',
-    takeOff: 'Take off',
-    free: 'Free',
     partyHat: 'Party hat',
+    fishHairclip: 'Fish hairclip',
   },
   sv: {
     todaysList: 'Dagens lista',
@@ -135,10 +133,8 @@ const UI_STRINGS = {
     magicLinkSent: 'Jag skickade en glittrig länk till {email}. Tryck på den för att komma in.',
     clickedItLetMeIn: 'Jag klickade på den — släpp in mig',
     dressingRoom: 'Garderoben',
-    wearIt: 'Ta på',
-    takeOff: 'Ta av',
-    free: 'Gratis',
     partyHat: 'Partyhatt',
+    fishHairclip: 'Fiskspänne',
   },
 } as const
 
@@ -174,6 +170,7 @@ export function listsCountText(uiLang: UiLang, n: number): string {
 // Maps an accessory's id (app/src/data/accessories.ts) to its i18n key.
 const ACCESSORY_NAME_KEYS: Record<string, UiStringKey> = {
   'party-hat': 'partyHat',
+  'fish-hairclip': 'fishHairclip',
 }
 
 export function accessoryName(uiLang: UiLang, id: string): string {
