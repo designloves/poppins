@@ -20,12 +20,14 @@ function AccessoryTile({
   equipped,
   uiLang,
   size,
+  radius,
   onToggle,
 }: {
   item: Accessory
   equipped: boolean
   uiLang: UiLang
   size: number
+  radius: string | number
   onToggle: (id: string) => void
 }) {
   const renderIcon = ACCESSORY_ICONS[item.id]
@@ -45,7 +47,7 @@ function AccessoryTile({
         gap: 2,
         padding: 4,
         boxSizing: 'border-box',
-        borderRadius: 14,
+        borderRadius: radius,
         background: 'var(--paper-alt)',
         border: equipped ? '3px solid var(--ink)' : 'var(--border-thin)',
         boxShadow: '0 3px 0 var(--ink)',
@@ -129,14 +131,16 @@ type SheetState = 'closed' | 'peek' | 'open'
 // Tall enough for just the handle/label — tap this to bring the sheet
 // back once it's been dragged all the way down.
 const CLOSED_HEIGHT = 64
-// The handle area's own height (10px top padding + 5px bar + 6px bottom
+// The handle area's own height (20px top padding + 5px bar + 12px bottom
 // padding) when it's just the bar, no label — i.e. whenever the sheet
 // isn't 'closed'.
-const HANDLE_HEIGHT = 21
+const HANDLE_HEIGHT = 37
 const TILES_PER_ROW = 4
 const TILE_GAP = 10
+// Same left/right inset as the header above the sheet, so the tile rows
+// line up with it instead of sitting at their own, different margin.
 const ROW_SIDE_PADDING = 16
-const ROW_TOP_PADDING = 4
+const ROW_TOP_PADDING = 8
 const ROW_BOTTOM_PADDING = 12
 // Caps the tile (and so the sheet) from growing unreasonably large on a
 // wide viewport — tiles are sized off the available width so exactly 4
@@ -147,6 +151,20 @@ const MAX_TILE_SIZE = 120
 // handle is treated as a tap (cycling open/peek/closed) rather than a
 // drag (snapping to whichever of the three it ended up closest to).
 const DRAG_THRESHOLD = 6
+
+// A tile that isn't flush against the sheet's own left/right edge just
+// uses a plain, fixed corner radius.
+const DEFAULT_TILE_RADIUS = 14
+// Apple's "concentric" corner rule from their newest HIG (Liquid Glass):
+// a nested shape's corner radius should equal its container's radius
+// minus the padding separating them, so the two curves share a focal
+// point instead of two independently-chosen roundings that just happen
+// to sit near each other. The sheet is the container here (--radius-lg),
+// and ROW_SIDE_PADDING is exactly what separates a row from the sheet's
+// own left/right edge, so deriving the edge tiles' radius from those two
+// — rather than picking a number by eye — keeps them concentric with the
+// sheet automatically, including if --radius-lg itself ever changes.
+const CONCENTRIC_TILE_RADIUS = `max(0px, calc(var(--radius-lg) - ${ROW_SIDE_PADDING}px))`
 
 export function DressingRoom({
   avatar,
@@ -324,7 +342,7 @@ export function DressingRoom({
             flexDirection: 'column',
             alignItems: 'center',
             gap: 6,
-            padding: '10px 0 6px',
+            padding: '20px 0 12px',
             cursor: 'grab',
           }}
         >
@@ -357,16 +375,27 @@ export function DressingRoom({
               alignContent: 'flex-start',
             }}
           >
-            {ACCESSORIES.map((item) => (
-              <AccessoryTile
-                key={item.id}
-                item={item}
-                equipped={equippedAccessoryId === item.id}
-                uiLang={uiLang}
-                size={tileSize()}
-                onToggle={onToggle}
-              />
-            ))}
+            {ACCESSORIES.map((item, i) => {
+              // Concentric with the sheet's rounded corners on whichever
+              // edge of the row this tile sits against — the first/last
+              // tile of each wrapped row, not just the very first/last
+              // accessory overall.
+              const isEdge =
+                i % TILES_PER_ROW === 0 ||
+                (i + 1) % TILES_PER_ROW === 0 ||
+                i === ACCESSORIES.length - 1
+              return (
+                <AccessoryTile
+                  key={item.id}
+                  item={item}
+                  equipped={equippedAccessoryId === item.id}
+                  uiLang={uiLang}
+                  size={tileSize()}
+                  radius={isEdge ? CONCENTRIC_TILE_RADIUS : DEFAULT_TILE_RADIUS}
+                  onToggle={onToggle}
+                />
+              )
+            })}
           </div>
         )}
 
@@ -382,16 +411,22 @@ export function DressingRoom({
               padding: `${ROW_TOP_PADDING}px ${ROW_SIDE_PADDING}px ${ROW_BOTTOM_PADDING}px`,
             }}
           >
-            {ACCESSORIES.map((item) => (
-              <AccessoryTile
-                key={item.id}
-                item={item}
-                equipped={equippedAccessoryId === item.id}
-                uiLang={uiLang}
-                size={tileSize()}
-                onToggle={onToggle}
-              />
-            ))}
+            {ACCESSORIES.map((item, i) => {
+              // The row never wraps here, so only the very first/last
+              // accessory sits at the sheet's left/right edge.
+              const isEdge = i === 0 || i === ACCESSORIES.length - 1
+              return (
+                <AccessoryTile
+                  key={item.id}
+                  item={item}
+                  equipped={equippedAccessoryId === item.id}
+                  uiLang={uiLang}
+                  size={tileSize()}
+                  radius={isEdge ? CONCENTRIC_TILE_RADIUS : DEFAULT_TILE_RADIUS}
+                  onToggle={onToggle}
+                />
+              )
+            })}
           </div>
         )}
       </div>
