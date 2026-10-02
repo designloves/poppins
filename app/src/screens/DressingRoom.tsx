@@ -109,26 +109,31 @@ interface DressingRoomProps {
 
 type SheetState = 'closed' | 'peek' | 'open'
 
-// Tall enough for just the handle/label — tap this to bring the sheet
-// back once it's been dragged all the way down. Needs to clear the
-// handle's own (now bigger) padding plus the label line below the bar.
-const CLOSED_HEIGHT = 88
-// The handle area's own height (28px top padding + 10px bar + 18px bottom
-// padding) when it's just the bar, no label — i.e. whenever the sheet
-// isn't 'closed'. Generous on purpose: the whole padded area is the drag
-// target (the pointer handlers sit on this container, not just the bar
-// graphic), so padding this much bigger than the bar itself is what
-// actually makes the sheet easier to grab, not just prettier to look at.
-const HANDLE_HEIGHT = 56
+// Just enough of the sheet's own paper to read as a closed drawer's edge
+// below the floating handle (see HANDLE_* below) — the handle itself
+// lives outside the sheet now, straddling this top edge, so this no
+// longer needs to leave room for it or for the closed-state label.
+const CLOSED_HEIGHT = 28
+// The handle's own padded box: it floats outside the sheet, centered on
+// its top edge, so none of this adds to the sheet's own height anymore.
+// Still generous on purpose — the whole padded box is the drag/tap
+// target, not just the bar graphic, so padding this much bigger than the
+// bar itself is what actually makes the sheet easier to grab.
+const HANDLE_BAR_WIDTH = 60
+const HANDLE_BAR_HEIGHT = 10
+const HANDLE_TOP_PADDING = 28
+const HANDLE_BOTTOM_PADDING = 18
 const TILES_PER_ROW = 4
 const TILE_GAP = 10
+// Back to the row's own small top padding, and the same left/right inset
+// as the header above the sheet — both were temporarily inflated to
+// match the handle's height while the handle still lived inside the
+// sheet (see git history); now that it floats outside, there's no longer
+// a reason to make the row's own, now-independent top and side padding
+// that much bigger than before.
 const ROW_TOP_PADDING = 8
 const ROW_BOTTOM_PADDING = 12
-// The gap from the sheet's left/right edge to a tile should match the gap
-// from its top edge to a tile (the handle plus the row's own top padding)
-// rather than being its own, smaller number — otherwise the top reads as
-// noticeably more padded than the sides, even though both are "padding."
-const ROW_SIDE_PADDING = HANDLE_HEIGHT + ROW_TOP_PADDING
+const ROW_SIDE_PADDING = 16
 // Caps the tile (and so the sheet) from growing unreasonably large on a
 // wide viewport — tiles are sized off the available width so exactly 4
 // fit per row, but that width is the whole app frame, which isn't capped
@@ -188,14 +193,12 @@ export function DressingRoom({
     return Math.min(MAX_TILE_SIZE, Math.floor(available / TILES_PER_ROW))
   }
 
-  // The sheet's content height for a given number of tile rows — the
-  // handle bar above it, plus that many square tiles and the gaps/padding
-  // around them.
+  // The sheet's own content height for a given number of tile rows — the
+  // handle floats outside it now, so this is just that many square tiles
+  // plus the gaps/padding around them.
   function rowsHeight(rows: number) {
     const size = tileSize()
-    return (
-      HANDLE_HEIGHT + ROW_TOP_PADDING + rows * size + (rows - 1) * TILE_GAP + ROW_BOTTOM_PADDING
-    )
+    return ROW_TOP_PADDING + rows * size + (rows - 1) * TILE_GAP + ROW_BOTTOM_PADDING
   }
 
   function heightFor(state: SheetState) {
@@ -298,25 +301,7 @@ export function DressingRoom({
         </div>
       </div>
 
-      <div
-        data-testid="dressing-room-sheet"
-        data-sheet-state={sheetState}
-        style={{
-          flexShrink: 0,
-          height: sheetHeight,
-          background: 'var(--paper)',
-          border: 'var(--border)',
-          borderBottom: 'none',
-          borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
-          boxShadow: '0 -6px 0 rgba(36,31,61,.08)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          paddingBottom: 'env(safe-area-inset-bottom)',
-          transition: dragHeight === null ? 'height 220ms ease-out' : 'none',
-          touchAction: 'none',
-        }}
-      >
+      <div style={{ position: 'relative', flexShrink: 0 }}>
         <div
           id="dressing-room-sheet-handle"
           onPointerDown={onHandlePointerDown}
@@ -324,19 +309,34 @@ export function DressingRoom({
           onPointerUp={onHandlePointerUp}
           onPointerCancel={onHandlePointerUp}
           style={{
-            flexShrink: 0,
+            position: 'absolute',
+            left: '50%',
+            // The sheet below is this wrapper's only normal-flow child, so
+            // it fills the wrapper top to bottom — top: 0 here is the
+            // sheet's own top edge. Straddling it (half above, half over
+            // its paper) is what makes this read as a pull mounted outside
+            // the drawer front, rather than part of the drawer's content.
+            top: 0,
+            transform: 'translate(-50%, -50%)',
+            zIndex: 1,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             gap: 6,
-            padding: '28px 0 18px',
+            padding: `${HANDLE_TOP_PADDING}px 0 ${HANDLE_BOTTOM_PADDING}px`,
             cursor: 'grab',
+            // Was inherited for free while the handle lived inside the
+            // sheet (which sets this on itself); now that it's a sibling
+            // instead of a descendant, it needs its own, or a touch drag
+            // starts a page/scroll gesture instead of reaching our pointer
+            // handlers.
+            touchAction: 'none',
           }}
         >
           <div
             style={{
-              width: 60,
-              height: 10,
+              width: HANDLE_BAR_WIDTH,
+              height: HANDLE_BAR_HEIGHT,
               borderRadius: 999,
               background: 'var(--paper-alt)',
               border: 'var(--border-thin)',
@@ -354,73 +354,92 @@ export function DressingRoom({
           )}
         </div>
 
-        {sheetState === 'open' && (
-          <div
-            style={{
-              flex: 1,
-              minHeight: 0,
-              overflowY: 'auto',
-              padding: `${ROW_TOP_PADDING}px ${ROW_SIDE_PADDING}px ${ROW_BOTTOM_PADDING}px`,
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: TILE_GAP,
-              alignContent: 'flex-start',
-            }}
-          >
-            {ACCESSORIES.map((item, i) => {
-              // Concentric with the sheet's rounded corners on whichever
-              // edge of the row this tile sits against — the first/last
-              // tile of each wrapped row, not just the very first/last
-              // accessory overall.
-              const isEdge =
-                i % TILES_PER_ROW === 0 ||
-                (i + 1) % TILES_PER_ROW === 0 ||
-                i === ACCESSORIES.length - 1
-              return (
-                <AccessoryTile
-                  key={item.id}
-                  item={item}
-                  equipped={equippedAccessoryId === item.id}
-                  uiLang={uiLang}
-                  size={tileSize()}
-                  radius={isEdge ? CONCENTRIC_TILE_RADIUS : DEFAULT_TILE_RADIUS}
-                  onToggle={onToggle}
-                />
-              )
-            })}
-          </div>
-        )}
+        <div
+          data-testid="dressing-room-sheet"
+          data-sheet-state={sheetState}
+          style={{
+            height: sheetHeight,
+            background: 'var(--paper)',
+            border: 'var(--border)',
+            borderBottom: 'none',
+            borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
+            boxShadow: '0 -6px 0 rgba(36,31,61,.08)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            transition: dragHeight === null ? 'height 220ms ease-out' : 'none',
+            touchAction: 'none',
+          }}
+        >
+          {sheetState === 'open' && (
+            <div
+              style={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                padding: `${ROW_TOP_PADDING}px ${ROW_SIDE_PADDING}px ${ROW_BOTTOM_PADDING}px`,
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: TILE_GAP,
+                alignContent: 'flex-start',
+              }}
+            >
+              {ACCESSORIES.map((item, i) => {
+                // Concentric with the sheet's rounded corners on whichever
+                // edge of the row this tile sits against — the first/last
+                // tile of each wrapped row, not just the very first/last
+                // accessory overall.
+                const isEdge =
+                  i % TILES_PER_ROW === 0 ||
+                  (i + 1) % TILES_PER_ROW === 0 ||
+                  i === ACCESSORIES.length - 1
+                return (
+                  <AccessoryTile
+                    key={item.id}
+                    item={item}
+                    equipped={equippedAccessoryId === item.id}
+                    uiLang={uiLang}
+                    size={tileSize()}
+                    radius={isEdge ? CONCENTRIC_TILE_RADIUS : DEFAULT_TILE_RADIUS}
+                    onToggle={onToggle}
+                  />
+                )
+              })}
+            </div>
+          )}
 
-        {sheetState === 'peek' && (
-          <div
-            style={{
-              flex: 1,
-              minHeight: 0,
-              overflowX: 'auto',
-              overflowY: 'hidden',
-              display: 'flex',
-              gap: TILE_GAP,
-              padding: `${ROW_TOP_PADDING}px ${ROW_SIDE_PADDING}px ${ROW_BOTTOM_PADDING}px`,
-            }}
-          >
-            {ACCESSORIES.map((item, i) => {
-              // The row never wraps here, so only the very first/last
-              // accessory sits at the sheet's left/right edge.
-              const isEdge = i === 0 || i === ACCESSORIES.length - 1
-              return (
-                <AccessoryTile
-                  key={item.id}
-                  item={item}
-                  equipped={equippedAccessoryId === item.id}
-                  uiLang={uiLang}
-                  size={tileSize()}
-                  radius={isEdge ? CONCENTRIC_TILE_RADIUS : DEFAULT_TILE_RADIUS}
-                  onToggle={onToggle}
-                />
-              )
-            })}
-          </div>
-        )}
+          {sheetState === 'peek' && (
+            <div
+              style={{
+                flex: 1,
+                minHeight: 0,
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                display: 'flex',
+                gap: TILE_GAP,
+                padding: `${ROW_TOP_PADDING}px ${ROW_SIDE_PADDING}px ${ROW_BOTTOM_PADDING}px`,
+              }}
+            >
+              {ACCESSORIES.map((item, i) => {
+                // The row never wraps here, so only the very first/last
+                // accessory sits at the sheet's left/right edge.
+                const isEdge = i === 0 || i === ACCESSORIES.length - 1
+                return (
+                  <AccessoryTile
+                    key={item.id}
+                    item={item}
+                    equipped={equippedAccessoryId === item.id}
+                    uiLang={uiLang}
+                    size={tileSize()}
+                    radius={isEdge ? CONCENTRIC_TILE_RADIUS : DEFAULT_TILE_RADIUS}
+                    onToggle={onToggle}
+                  />
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
