@@ -70,6 +70,8 @@ const UI_STRINGS = {
     takeOff: 'Take off',
     free: 'Free',
     partyHat: 'Party hat',
+    includeConjugations: 'Add comparative & superlative forms',
+    practiceConjugations: 'Also practice comparative & superlative',
   },
   sv: {
     todaysList: 'Dagens lista',
@@ -139,6 +141,8 @@ const UI_STRINGS = {
     takeOff: 'Ta av',
     free: 'Gratis',
     partyHat: 'Partyhatt',
+    includeConjugations: 'Lägg till komparativ- och superlativform',
+    practiceConjugations: 'Öva även komparativ och superlativ',
   },
 } as const
 

@@ -1,5 +1,6 @@
 import { Button } from '@base-ui/react/button'
 import type { ChangeEvent, ReactNode } from 'react'
+import { comparativeKey, superlativeKey } from '../lib/adjectiveForms'
 import { accentText, type AvatarKey, type Word } from '../data/constants'
 import { LANGUAGE_CODES, langName, t, type UiLang } from '../data/i18n'
 import type { LangPair } from '../lib/pasteParsing'
@@ -31,6 +32,8 @@ interface PasteProps {
   editingListId: string | null
   pastePair: LangPair
   pasteLoading: boolean
+  pasteIncludeForms: boolean
+  setPasteIncludeForms: (v: boolean) => void
   onClose: () => void
   onChangeFrom: (code: string) => void
   onChangeTo: (code: string) => void
@@ -51,6 +54,8 @@ export function Paste({
   editingListId,
   pastePair,
   pasteLoading,
+  pasteIncludeForms,
+  setPasteIncludeForms,
   onClose,
   onChangeFrom,
   onChangeTo,
@@ -120,6 +125,26 @@ export function Paste({
             value={pasteText}
             onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setPasteText(e.target.value)}
           />
+          <div
+            className="card"
+            style={{
+              padding: '14px 16px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <span className="b-font" style={{ fontWeight: 600, color: 'var(--ink)', fontSize: 14 }}>
+              {t(uiLang, 'includeConjugations')}
+            </span>
+            <Button
+              id="paste-include-forms"
+              className="switch"
+              data-on={pasteIncludeForms}
+              onClick={() => setPasteIncludeForms(!pasteIncludeForms)}
+            />
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <Button id="paste-cancel" className="btn btn-tertiary" onClick={onClose}>
@@ -218,27 +243,47 @@ export function Paste({
         </div>
       </div>
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {pasteParsed.map((w, i) => (
-          <div
-            key={i}
-            className="b-font"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              background: 'var(--paper)',
-              border: 'var(--border-thin)',
-              borderRadius: 14,
-              padding: '10px 14px',
-            }}
-          >
-            <span style={{ color: 'var(--ink)', fontWeight: 700, flex: 1 }}>
-              {w[pastePair.from] || w.sv}
-            </span>
-            <ArrowRight size={14} color="#6B638A" />
-            <span style={{ color: 'var(--ink-soft)', flex: 1 }}>{w[pastePair.to] || w.en}</span>
-          </div>
-        ))}
+        {pasteParsed.map((w, i) => {
+          const comparative = w[comparativeKey(pastePair.from)] && w[comparativeKey(pastePair.to)]
+          const superlative = w[superlativeKey(pastePair.from)] && w[superlativeKey(pastePair.to)]
+          return (
+            <div
+              key={i}
+              style={{
+                background: 'var(--paper)',
+                border: 'var(--border-thin)',
+                borderRadius: 14,
+                padding: '10px 14px',
+              }}
+            >
+              <div className="b-font" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ color: 'var(--ink)', fontWeight: 700, flex: 1 }}>
+                  {w[pastePair.from] || w.sv}
+                </span>
+                <ArrowRight size={14} color="#6B638A" />
+                <span style={{ color: 'var(--ink-soft)', flex: 1 }}>{w[pastePair.to] || w.en}</span>
+              </div>
+              {(comparative || superlative) && (
+                <div
+                  data-testid="paste-word-forms"
+                  className="m-font"
+                  style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 6 }}
+                >
+                  {comparative && (
+                    <span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
+                      {w[comparativeKey(pastePair.from)]} → {w[comparativeKey(pastePair.to)]}
+                    </span>
+                  )}
+                  {superlative && (
+                    <span style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
+                      {w[superlativeKey(pastePair.from)]} → {w[superlativeKey(pastePair.to)]}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
       <div style={{ display: 'flex', gap: 10 }}>
         <Button id="paste-back" className="btn btn-tertiary" onClick={onBack}>
