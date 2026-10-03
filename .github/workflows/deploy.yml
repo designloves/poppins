@@ -13,14 +13,21 @@ permissions:
   # "issues/comments" (a PR is an issue under the hood).
   pull-requests: write
 
-concurrency:
-  group: pages-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   deploy-production:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    # A fixed group, not ${{ github.ref }}: for a *closed* pull_request
+    # event, github.ref resolves to the base branch (refs/heads/main) —
+    # same as a push to main — once GitHub deletes the PR's own
+    # refs/pull/<n>/merge ref on close. A merge's push and that same PR's
+    # closed-cleanup event land in the same instant, so a shared
+    # ${{ github.ref }} group meant this job kept losing the race and
+    # getting cancelled by the unrelated preview-cleanup job below,
+    # silently skipping the real production deploy on every merge.
+    concurrency:
+      group: pages-production
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
 
@@ -51,6 +58,13 @@ jobs:
   preview:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    # Keyed by PR number rather than github.ref for the same reason as
+    # deploy-production's group above — scoped per-PR so two different
+    # PRs' preview builds never contend, while a rapid second push to the
+    # same PR still cancels its own stale in-progress preview.
+    concurrency:
+      group: pages-preview-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
 
