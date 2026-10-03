@@ -68,6 +68,8 @@ const UI_STRINGS = {
     dressingRoom: 'Dressing room',
     partyHat: 'Party hat',
     fishHairclip: 'Fish hairclip',
+    includeConjugations: 'Add comparative & superlative forms',
+    practiceConjugations: 'Also practice comparative & superlative',
   },
   sv: {
     todaysList: 'Dagens lista',
@@ -135,6 +137,8 @@ const UI_STRINGS = {
     dressingRoom: 'Garderoben',
     partyHat: 'Partyhatt',
     fishHairclip: 'Fiskspänne',
+    includeConjugations: 'Lägg till komparativ- och superlativform',
+    practiceConjugations: 'Öva även komparativ och superlativ',
   },
 } as const
 

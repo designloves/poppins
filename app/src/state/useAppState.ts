@@ -16,6 +16,7 @@ import { COIN_FLIGHT_MS, type CoinFlightData } from '../components/CoinFlight'
 import type { ScreenFxKind } from '../components/ScreenFx'
 import type { QuizFeedback } from '../components/FeedbackBurst'
 import { clearSession, initAuth, sendMagicLink, signOutRemote, type CurrentUser } from '../lib/auth'
+import { expandWithForms, mergeForms, wordsHaveAnyForms } from '../lib/adjectiveForms'
 import {
   guessPairFromText,
   looksLikeSingleWords,
@@ -25,7 +26,7 @@ import {
 import { shuffle } from '../lib/shuffle'
 import { nudgeThemeColor } from '../lib/nudgeThemeColor'
 import { playCorrectSound, playWrongSound } from '../lib/sound'
-import { translateWords } from '../lib/translate'
+import { fetchAdjectiveForms, translateWords } from '../lib/translate'
 
 const NEW_LIST_COLORS = ['rose', 'butter', 'sky', 'mint'] as const
 
@@ -130,6 +131,9 @@ export function useAppState() {
   const [pasteAutoGuessed, setPasteAutoGuessed] = useState(false)
   const [pasteAutoTranslated, setPasteAutoTranslated] = useState(false)
   const [pasteLoading, setPasteLoading] = useState(false)
+  // When on, parsing/translating fetches comparative & superlative forms
+  // for any adjectives and stores them alongside each word.
+  const [pasteIncludeForms, setPasteIncludeForms] = useState(false)
 
   const [soundOn, setSoundOn] = useState(() => loadSettings().soundOn ?? false)
   const [pronunciationOn, setPronunciationOn] = useState(
@@ -167,6 +171,7 @@ export function useAppState() {
 
   // ── Quiz ──
   const [quizReversed, setQuizReversed] = useState(false)
+  const [quizIncludeForms, setQuizIncludeForms] = useState(false)
   const [quizWords, setQuizWords] = useState<Word[]>([])
   const [quizIdx, setQuizIdx] = useState(0)
   const [quizRight, setQuizRight] = useState(0)
@@ -317,10 +322,12 @@ export function useAppState() {
     }, GREETING_DURATION_MS)
   }
 
-  function startQuiz(reversed: boolean) {
+  function startQuiz(reversed: boolean, includeForms: boolean) {
     if (!activeList) return
-    const words = shuffle(activeList.words)
+    const pool = includeForms ? expandWithForms(activeList.words, activeList) : activeList.words
+    const words = shuffle(pool)
     setQuizReversed(reversed)
+    setQuizIncludeForms(includeForms)
     setQuizWords(words)
     setQuizIdx(0)
     setQuizRight(0)
@@ -447,7 +454,7 @@ export function useAppState() {
   }
 
   function playAgain() {
-    if (activeList) startQuiz(quizReversed)
+    if (activeList) startQuiz(quizReversed, quizIncludeForms)
   }
 
   function resetLoginState() {
@@ -532,6 +539,7 @@ export function useAppState() {
     setPasteAutoGuessed(false)
     setPasteAutoTranslated(false)
     setPasteLoading(false)
+    setPasteIncludeForms(false)
   }
 
   function openNewList() {
@@ -553,6 +561,10 @@ export function useAppState() {
     setPasteAutoGuessed(true)
     setPasteAutoTranslated(false)
     setPasteLoading(false)
+    // Defaults back on if this list already has forms, so re-saving after
+    // an unrelated edit (a typo fix, a renamed list) doesn't silently drop
+    // them just because the toggle isn't re-checked.
+    setPasteIncludeForms(wordsHaveAnyForms(activeList.words))
     navigate('paste')
   }
 
@@ -562,6 +574,25 @@ export function useAppState() {
 
   function setPasteText(value: string) {
     setPasteTextState(value)
+  }
+
+  // When pasteIncludeForms is on, fetches comparative/superlative forms
+  // for `parsed` and merges them in; otherwise returns it unchanged. A
+  // forms-fetch failure doesn't lose the underlying translation — it just
+  // falls back to saving without conjugations, with a heads-up.
+  async function withForms(parsed: Word[], pair: LangPair): Promise<Word[]> {
+    if (!pasteIncludeForms) return parsed
+    try {
+      const forms = await fetchAdjectiveForms(
+        parsed.map((w) => ({ from: w[pair.from] ?? '', to: w[pair.to] ?? '' })),
+        pair.from,
+        pair.to,
+      )
+      return mergeForms(parsed, forms, pair.from, pair.to)
+    } catch {
+      window.alert('Could not add comparative/superlative forms — saved without them.')
+      return parsed
+    }
   }
 
   async function reTranslateReview(pair: LangPair) {
@@ -575,7 +606,7 @@ export function useAppState() {
         .filter(Boolean)
       const { translations } = await translateWords(rawWords, pair.from, pair.to)
       const parsed = rawWords.map((w, i) => ({ [pair.from]: w, [pair.to]: translations[i] }))
-      setPasteParsed(parsed)
+      setPasteParsed(await withForms(parsed, pair))
       setPasteLoading(false)
     } catch {
       setPasteLoading(false)
@@ -583,26 +614,35 @@ export function useAppState() {
     }
   }
 
+  // Re-parses a manually-pasted (not auto-translated) list for a new
+  // language pair, re-fetching forms for it too when the toggle is on —
+  // shared by changePasteFrom/changePasteTo since they only differ in
+  // which side of the pair they update.
+  function applyManualPair(pair: LangPair) {
+    setPastePair(pair)
+    setPasteAutoGuessed(true)
+    const parsed = parsePasteText(pasteText, pair)
+    if (!pasteIncludeForms) {
+      setPasteParsed(parsed)
+      return
+    }
+    setPasteLoading(true)
+    void withForms(parsed, pair).then((withF) => {
+      setPasteParsed(withF)
+      setPasteLoading(false)
+    })
+  }
+
   function changePasteFrom(code: string) {
     const pair = { ...pastePair, from: code }
-    if (pasteAutoTranslated) {
-      void reTranslateReview(pair)
-    } else {
-      setPastePair(pair)
-      setPasteAutoGuessed(true)
-      setPasteParsed(parsePasteText(pasteText, pair))
-    }
+    if (pasteAutoTranslated) void reTranslateReview(pair)
+    else applyManualPair(pair)
   }
 
   function changePasteTo(code: string) {
     const pair = { ...pastePair, to: code }
-    if (pasteAutoTranslated) {
-      void reTranslateReview(pair)
-    } else {
-      setPastePair(pair)
-      setPasteAutoGuessed(true)
-      setPasteParsed(parsePasteText(pasteText, pair))
-    }
+    if (pasteAutoTranslated) void reTranslateReview(pair)
+    else applyManualPair(pair)
   }
 
   async function submitPasteParse() {
@@ -617,7 +657,7 @@ export function useAppState() {
         const { from, to, translations } = await translateWords(rawWords)
         const pair = { from, to }
         const parsed = rawWords.map((w, i) => ({ [from]: w, [to]: translations[i] }))
-        setPasteParsed(parsed)
+        setPasteParsed(await withForms(parsed, pair))
         setPasteStep('review')
         setPastePair(pair)
         setPasteAutoGuessed(true)
@@ -632,11 +672,17 @@ export function useAppState() {
     const guess = !pasteAutoGuessed && guessPairFromText(text)
     const pair = guess || pastePair
     const parsed = parsePasteText(text, pair)
-    setPasteParsed(parsed)
     setPasteStep('review')
     setPastePair(pair)
     setPasteAutoGuessed(true)
     setPasteAutoTranslated(false)
+    if (!pasteIncludeForms) {
+      setPasteParsed(parsed)
+      return
+    }
+    setPasteLoading(true)
+    setPasteParsed(await withForms(parsed, pair))
+    setPasteLoading(false)
   }
 
   function backToPasteStep() {
@@ -708,6 +754,8 @@ export function useAppState() {
     editingListId,
     pastePair,
     pasteLoading,
+    pasteIncludeForms,
+    setPasteIncludeForms,
     changePasteFrom,
     changePasteTo,
     submitPasteParse,

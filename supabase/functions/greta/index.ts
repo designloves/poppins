@@ -59,6 +59,7 @@ Deno.serve(async (req: Request) => {
     if (req.method === 'PATCH'  && path.includes('/sets/'))     return await updateSet(req, url)
     if (req.method === 'DELETE' && path.includes('/sets/'))     return await deleteSet(req, url)
     if (req.method === 'POST'   && path.endsWith('/translate')) return await translateWords(req)
+    if (req.method === 'POST'   && path.endsWith('/forms'))     return await fetchForms(req)
 
     return err('Not found', 404)
   } catch (e) {
@@ -253,6 +254,97 @@ ${words.map((w, i) => `${i + 1}. ${w}`).join('\n')}`
   const from = parsed.from && LANG_NAMES[parsed.from] ? parsed.from : (body.from || 'en')
   const to   = parsed.to   && LANG_NAMES[parsed.to]   ? parsed.to   : (body.to   || 'sv')
   return json({ from, to, translations: parsed.translations.map((t) => String(t)) })
+}
+
+// ── POST /forms — no auth required, comparative/superlative forms ──
+// Requires an ANTHROPIC_API_KEY secret (same one /translate uses).
+// Given word pairs already translated between `from` and `to`, asks
+// Claude which ones are adjectives and, for those, their comparative and
+// superlative forms in both languages — used by the "add conjugations"
+// toggle in the list creator.
+
+async function fetchForms(req: Request) {
+  let body: { words?: unknown[]; from?: string; to?: string }
+  try { body = await req.json() }
+  catch { return err('Invalid JSON', 400) }
+
+  const fromCode = body.from, toCode = body.to
+  if (!fromCode || !toCode || !LANG_NAMES[fromCode] || !LANG_NAMES[toCode]) {
+    return err('Missing or unsupported from/to language', 400)
+  }
+  const fromName = LANG_NAMES[fromCode]
+  const toName   = LANG_NAMES[toCode]
+
+  const words = (body.words ?? [])
+    .map((w) => {
+      const rec = w as { from?: unknown; to?: unknown }
+      return { from: String(rec?.from ?? '').trim(), to: String(rec?.to ?? '').trim() }
+    })
+    .filter((w) => w.from && w.to)
+    .slice(0, MAX_WORDS)
+  if (!words.length) return err('No words provided', 400)
+
+  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
+  if (!apiKey) return err('Translation is not configured on this server', 503)
+
+  const prompt = `For each word pair below (a ${fromName} word and its ${toName} translation), decide whether the ${fromName} word is an adjective with comparative and superlative forms. If it is, give its comparative and superlative forms in BOTH ${fromName} and ${toName} — translations of each other, not invented separately. If it is not an adjective, just mark it as such.
+
+Return ONLY a JSON object with this exact shape and nothing else — no markdown, no explanation:
+{"forms":[{"isAdjective":true,"from":{"comparative":"...","superlative":"..."},"to":{"comparative":"...","superlative":"..."}},{"isAdjective":false}]}
+
+The "forms" array must have exactly ${words.length} items, in the same order as the pairs below. Omit "from"/"to" when "isAdjective" is false.
+
+Pairs:
+${words.map((w, i) => `${i + 1}. ${w.from} (${w.to})`).join('\n')}`
+
+  let res: Response
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 20000)
+    try {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1536,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+        signal: controller.signal,
+      })
+    } finally {
+      clearTimeout(timeout)
+    }
+  } catch (e) {
+    if (e instanceof Error && e.name === 'AbortError') return err('Translation timed out — try again', 504)
+    return err(`Could not reach translation service: ${e instanceof Error ? e.message : String(e)}`, 502)
+  }
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    return err(`Translation service error (${res.status}): ${detail.slice(0, 300)}`, 502)
+  }
+
+  let data: unknown
+  try { data = await res.json() }
+  catch { return err('Translation service returned an unreadable response', 502) }
+
+  const text: string = (data as { content?: Array<{ text?: string }> })?.content?.[0]?.text ?? ''
+  let parsed: { forms?: unknown[] }
+  try {
+    const match = text.match(/\{[\s\S]*\}/)
+    parsed = JSON.parse(match ? match[0] : text)
+  } catch {
+    return err(`Could not parse conjugation response: ${text.slice(0, 200)}`, 502)
+  }
+
+  if (!Array.isArray(parsed.forms) || parsed.forms.length !== words.length) {
+    return err('Conjugation response did not match the word count', 502)
+  }
+  return json({ forms: parsed.forms })
 }
 
 // ── DELETE /sets/:id — auth required, only own sets ─────

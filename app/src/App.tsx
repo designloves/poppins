@@ -109,6 +109,8 @@ function App() {
         editingListId={state.editingListId}
         pastePair={state.pastePair}
         pasteLoading={state.pasteLoading}
+        pasteIncludeForms={state.pasteIncludeForms}
+        setPasteIncludeForms={state.setPasteIncludeForms}
         onClose={state.closePaste}
         onChangeFrom={state.changePasteFrom}
         onChangeTo={state.changePasteTo}

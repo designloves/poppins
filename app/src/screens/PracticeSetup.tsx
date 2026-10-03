@@ -1,6 +1,8 @@
 import { Button } from '@base-ui/react/button'
+import { useState } from 'react'
 import { langHelpers, type WordList } from '../data/constants'
 import { langName, t, type UiLang } from '../data/i18n'
+import { listHasForms } from '../lib/adjectiveForms'
 import { ArrowBack } from '../icons/icons'
 import { Mascot } from '../icons/Mascot'
 import { useSwipeBack } from '../lib/useSwipeBack'
@@ -9,14 +11,16 @@ interface PracticeSetupProps {
   list: WordList
   uiLang: UiLang
   onBack: () => void
-  onStart: (reversed: boolean) => void
+  onStart: (reversed: boolean, includeForms: boolean) => void
 }
 
 export function PracticeSetup({ list, uiLang, onBack, onStart }: PracticeSetupProps) {
   useSwipeBack(onBack)
+  const [includeForms, setIncludeForms] = useState(false)
   const lh = langHelpers(list, false)
   const srcLang = langName(uiLang, lh.from)
   const tgtLang = langName(uiLang, lh.to)
+  const canIncludeForms = listHasForms(list)
 
   return (
     <div
@@ -54,11 +58,39 @@ export function PracticeSetup({ list, uiLang, onBack, onStart }: PracticeSetupPr
             {t(uiLang, 'starting', { name: list.name })}
           </p>
         </div>
+        {canIncludeForms && (
+          <div
+            className="card"
+            style={{
+              padding: '14px 16px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <span className="b-font" style={{ fontWeight: 600, color: 'var(--ink)', fontSize: 14 }}>
+              {t(uiLang, 'practiceConjugations')}
+            </span>
+            <Button
+              id="practice-include-forms"
+              className="switch"
+              data-on={includeForms}
+              onClick={() => setIncludeForms((v) => !v)}
+            />
+          </div>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Button className="btn btn-primary btn-lg btn-full" onClick={() => onStart(false)}>
+          <Button
+            className="btn btn-primary btn-lg btn-full"
+            onClick={() => onStart(false, includeForms)}
+          >
             {t(uiLang, 'answerIn', { lang: tgtLang })}
           </Button>
-          <Button className="btn btn-secondary btn-lg btn-full" onClick={() => onStart(true)}>
+          <Button
+            className="btn btn-secondary btn-lg btn-full"
+            onClick={() => onStart(true, includeForms)}
+          >
             {t(uiLang, 'answerIn', { lang: srcLang })}
           </Button>
         </div>
