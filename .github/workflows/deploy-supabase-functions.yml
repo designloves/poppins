@@ -22,7 +22,11 @@ jobs:
           version: latest
 
       - name: Deploy greta edge function
-        working-directory: supabase
+        # No working-directory: the CLI already resolves function paths
+        # as ./supabase/functions/<name> relative to wherever it's run,
+        # so running it from inside supabase/ doubled that to
+        # supabase/supabase/functions/greta — "entrypoint path does not
+        # exist" (confirmed on the first real run, see run 37224676392).
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
