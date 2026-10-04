@@ -27,6 +27,8 @@ cp index.ts supabase/functions/greta/index.ts
 supabase functions deploy greta
 ```
 
+**This repo also deploys it automatically** via `.github/workflows/deploy-supabase-functions.yml`, which runs on every push to `main` that touches `supabase/functions/**`. It needs one repo secret: `SUPABASE_ACCESS_TOKEN`, a personal access token from [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens), added under the repo's **Settings → Secrets and variables → Actions**. Without that secret set, merging a change to the edge function updates the code in git but not the live function — you'd still need the manual steps above (or `workflow_dispatch` the workflow by hand) until it's added.
+
 ---
 
 ## Step 3 – Set secrets

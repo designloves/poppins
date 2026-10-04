@@ -1,0 +1,37 @@
+name: Deploy Supabase Functions
+
+# Edge function changes under supabase/functions/ aren't published by
+# merging to main on their own — Supabase hosts them separately from
+# GitHub Pages, and (per SETUP.md) the only way to publish was previously
+# a human running `supabase functions deploy greta` by hand. This closes
+# that gap for the greta function specifically.
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/functions/**']
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy greta edge function
+        working-directory: supabase
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          # --no-verify-jwt matches how this function has always run:
+          # /translate and /forms take anonymous, unauthenticated calls
+          # from the client (see app/src/lib/translate.ts) — only /sets
+          # checks a bearer token itself, inside the function's own code.
+          # The project ref isn't a secret: it's already public in that
+          # same client file, embedded in every page load.
+          supabase functions deploy greta \
+            --project-ref ivcnjkzuggwpxvnalbol \
+            --no-verify-jwt
