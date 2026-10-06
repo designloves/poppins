@@ -72,6 +72,14 @@ const UI_STRINGS = {
     practiceConjugations: 'Also practice comparative & superlative',
     transferLists: 'Save my lists to this account',
     transferringLists: 'Saving…',
+    ok: 'OK',
+    deleteListConfirm: 'Permanently delete this list?',
+    deleteConfirm: 'Delete',
+    transferSuccess: 'Your lists are saved to your account!',
+    transferPartialFailure: 'Some lists could not be transferred:',
+    couldNotAddForms:
+      'Could not add comparative/superlative forms — saved without them. ({reason})',
+    couldNotTranslate: 'Could not translate — try again. ({reason})',
   },
   sv: {
     todaysList: 'Dagens lista',
@@ -143,6 +151,13 @@ const UI_STRINGS = {
     practiceConjugations: 'Öva även komparativ och superlativ',
     transferLists: 'Spara mina listor på kontot',
     transferringLists: 'Sparar…',
+    ok: 'OK',
+    deleteListConfirm: 'Ta bort listan permanent?',
+    deleteConfirm: 'Ta bort',
+    transferSuccess: 'Dina listor är sparade på kontot!',
+    transferPartialFailure: 'Några listor kunde inte överföras:',
+    couldNotAddForms: 'Kunde inte lägga till komparativ/superlativ — sparade utan dem. ({reason})',
+    couldNotTranslate: 'Kunde inte översätta — försök igen. ({reason})',
   },
 } as const
 
