@@ -1,7 +1,8 @@
 // Public, unauthenticated Supabase auth endpoints — same project the
 // legacy app talks to. Signing in works without a backend deployment
-// of our own; only re-syncing a user's lists to the server (not done
-// here — see the Login screen's PR description) would need more.
+// of our own. Re-syncing a user's lists to the server (POST /sets) is
+// a separate, explicit action — see lib/sets.ts and useAppState's
+// transferLists().
 const SUPABASE_URL = 'https://ivcnjkzuggwpxvnalbol.supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_nvKqUBjP0B-TmROc_aJtdA_U-P0pr_u'
 

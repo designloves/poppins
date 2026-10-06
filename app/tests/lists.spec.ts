@@ -36,3 +36,20 @@ test('deleting a list asks for confirmation and removes it on accept', async ({ 
   await expect(page.getByText('Skolan (School)')).toBeHidden()
   await expect(page.getByText('3 listor')).toBeVisible()
 })
+
+test('lists and the active list survive a reload', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Mina listor' }).click()
+
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.locator('.card', { hasText: 'Skolan' }).locator('button').click()
+  await expect(page.getByText('3 listor')).toBeVisible()
+  await page.getByText('Mat (Food)').click()
+
+  await page.reload()
+
+  await expect(page.getByText('Mat (Food)')).toBeVisible()
+  await page.getByRole('button', { name: 'Mina listor' }).click()
+  await expect(page.getByText('3 listor')).toBeVisible()
+  await expect(page.getByText('Skolan (School)')).toBeHidden()
+})

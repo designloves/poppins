@@ -25,6 +25,7 @@ import {
 } from '../lib/pasteParsing'
 import { shuffle } from '../lib/shuffle'
 import { nudgeThemeColor } from '../lib/nudgeThemeColor'
+import { saveSet } from '../lib/sets'
 import { playCorrectSound, playWrongSound } from '../lib/sound'
 import { fetchAdjectiveForms, translateWords } from '../lib/translate'
 
@@ -45,6 +46,8 @@ interface PersistedSettings {
   soundOn: boolean
   pronunciationOn: boolean
   equippedAccessoryId: string | null
+  lists: WordList[]
+  activeListId: string | null
 }
 
 function loadSettings(): Partial<PersistedSettings> {
@@ -116,8 +119,11 @@ export function useAppState() {
   const [coins, setCoins] = useState(() => loadSettings().coins ?? 0)
   const [uiLang, setUiLang] = useState<UiLang>(() => loadSettings().uiLang ?? 'sv')
   const [coinBump, setCoinBump] = useState(false)
-  const [lists, setLists] = useState(SAMPLE_LISTS)
-  const [activeListId, setActiveListId] = useState<string | null>(SAMPLE_LISTS[0]?.id ?? null)
+  const [lists, setLists] = useState<WordList[]>(() => loadSettings().lists ?? SAMPLE_LISTS)
+  const [activeListId, setActiveListId] = useState<string | null>(
+    () =>
+      loadSettings().activeListId ?? loadSettings().lists?.[0]?.id ?? SAMPLE_LISTS[0]?.id ?? null,
+  )
   const [showGreeting, setShowGreeting] = useState(false)
   const [greetingHiding, setGreetingHiding] = useState(false)
 
@@ -150,15 +156,17 @@ export function useAppState() {
 
   // ── Auth / Login ──
   // Signing in is real (a magic-link email through Supabase, the same
-  // project the legacy app uses), but nothing here re-syncs lists to
-  // the server once signed in — every screen still reads/writes the
-  // local `lists` state only. See the Login screen's PR description.
+  // project the legacy app uses). Lists aren't auto-synced to the server
+  // on login — every screen still reads/writes the local `lists` state
+  // as the source of truth — but transferLists() below lets a signed-in
+  // user push their local lists up explicitly (see Settings).
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const [sessionToken, setSessionToken] = useState<string | null>(null)
   const [loginEmail, setLoginEmail] = useState('')
   const [loginSent, setLoginSent] = useState(false)
   const [loginErr, setLoginErr] = useState('')
   const [loginLoading, setLoginLoading] = useState(false)
+  const [transferring, setTransferring] = useState(false)
 
   useEffect(() => {
     initAuth().then((result) => {
@@ -214,8 +222,17 @@ export function useAppState() {
   }
 
   useEffect(() => {
-    saveSettings({ avatar, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId })
-  }, [avatar, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId])
+    saveSettings({
+      avatar,
+      coins,
+      uiLang,
+      soundOn,
+      pronunciationOn,
+      equippedAccessoryId,
+      lists,
+      activeListId,
+    })
+  }, [avatar, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId, lists, activeListId])
 
   function selectAvatar(next: AvatarKey) {
     setAvatar(next)
@@ -229,7 +246,16 @@ export function useAppState() {
     // flush in time otherwise) and reload shortly after — long enough
     // to still show the picked avatar's selection state first — landing
     // back on this same screen instead of Home.
-    saveSettings({ avatar: next, coins, uiLang, soundOn, pronunciationOn, equippedAccessoryId })
+    saveSettings({
+      avatar: next,
+      coins,
+      uiLang,
+      soundOn,
+      pronunciationOn,
+      equippedAccessoryId,
+      lists,
+      activeListId,
+    })
     try {
       sessionStorage.setItem(PENDING_SCREEN_KEY, screen)
     } catch {
@@ -499,6 +525,37 @@ export function useAppState() {
     navigate('home')
   }
 
+  // Uploads every list that hasn't already been saved to the server
+  // (tracked via list.remoteId) to the signed-in user's account, so
+  // lists built up locally before logging in aren't stranded on this
+  // device. Each list is reported separately — one bad list (e.g. over
+  // the server's word cap) shouldn't block the rest from transferring.
+  async function transferLists() {
+    if (!sessionToken) return
+    setTransferring(true)
+    const failures: string[] = []
+    for (const list of lists) {
+      if (list.remoteId) continue
+      try {
+        const { id } = await saveSet(sessionToken, {
+          topic: list.name,
+          vocab: list.words,
+          lang_from: list.from,
+          lang_to: list.to,
+        })
+        setLists((ls) => ls.map((l) => (l.id === list.id ? { ...l, remoteId: id } : l)))
+      } catch (e) {
+        failures.push(`${list.name}: ${e instanceof Error ? e.message : 'unknown error'}`)
+      }
+    }
+    setTransferring(false)
+    if (failures.length) {
+      window.alert(`Some lists could not be transferred:\n${failures.join('\n')}`)
+    } else {
+      window.alert('Your lists are saved to your account!')
+    }
+  }
+
   function openDressingRoom() {
     navigate('dressingRoom')
   }
@@ -740,6 +797,9 @@ export function useAppState() {
     skipLogin,
     submitLogin,
     logout,
+    transferring,
+    transferLists,
+    pendingTransferCount: lists.filter((l) => !l.remoteId).length,
     lists,
     activeList,
     activeListId,
