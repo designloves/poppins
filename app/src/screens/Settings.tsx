@@ -14,9 +14,12 @@ interface SettingsProps {
   pronunciationOn: boolean
   equippedAccessoryId: string | null
   currentUser: CurrentUser | null
+  pendingTransferCount: number
+  transferring: boolean
   onBack: () => void
   onLogin: () => void
   onLogout: () => void
+  onTransferLists: () => void
   onSetAvatar: (avatar: AvatarKey) => void
   onSetUiLang: (uiLang: UiLang) => void
   onToggleSound: () => void
@@ -31,9 +34,12 @@ export function Settings({
   pronunciationOn,
   equippedAccessoryId,
   currentUser,
+  pendingTransferCount,
+  transferring,
   onBack,
   onLogin,
   onLogout,
+  onTransferLists,
   onSetAvatar,
   onSetUiLang,
   onToggleSound,
@@ -102,6 +108,17 @@ export function Settings({
           )}
         </div>
       </div>
+
+      {currentUser && pendingTransferCount > 0 && (
+        <Button
+          id="settings-transfer-lists"
+          className="btn btn-primary btn-full"
+          disabled={transferring}
+          onClick={onTransferLists}
+        >
+          {transferring ? t(uiLang, 'transferringLists') : t(uiLang, 'transferLists')}
+        </Button>
+      )}
 
       {currentUser && (
         <Button id="settings-logout" className="btn btn-tertiary btn-full" onClick={onLogout}>

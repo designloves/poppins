@@ -128,9 +128,12 @@ function App() {
         pronunciationOn={state.pronunciationOn}
         equippedAccessoryId={state.equippedAccessoryId}
         currentUser={state.currentUser}
+        pendingTransferCount={state.pendingTransferCount}
+        transferring={state.transferring}
         onBack={() => state.navigate('home')}
         onLogin={state.openLogin}
         onLogout={state.logout}
+        onTransferLists={state.transferLists}
         onSetAvatar={state.selectAvatar}
         avatarChanging={state.avatarChanging}
         onSetUiLang={state.setUiLang}

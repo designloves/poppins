@@ -7,6 +7,9 @@ export interface WordList {
   name: string
   color: keyof typeof COLOR_MAP
   words: Word[]
+  // Set once this list has been uploaded via POST /sets, so a repeat
+  // "transfer my lists" action skips it instead of creating a duplicate.
+  remoteId?: string
 }
 
 export const SAMPLE_LISTS: WordList[] = [

@@ -70,6 +70,8 @@ const UI_STRINGS = {
     fishHairclip: 'Fish hairclip',
     includeConjugations: 'Add comparative & superlative forms',
     practiceConjugations: 'Also practice comparative & superlative',
+    transferLists: 'Save my lists to this account',
+    transferringLists: 'Saving…',
   },
   sv: {
     todaysList: 'Dagens lista',
@@ -139,6 +141,8 @@ const UI_STRINGS = {
     fishHairclip: 'Fiskspänne',
     includeConjugations: 'Lägg till komparativ- och superlativform',
     practiceConjugations: 'Öva även komparativ och superlativ',
+    transferLists: 'Spara mina listor på kontot',
+    transferringLists: 'Sparar…',
   },
 } as const
 
