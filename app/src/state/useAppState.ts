@@ -589,8 +589,9 @@ export function useAppState() {
         pair.to,
       )
       return mergeForms(parsed, forms, pair.from, pair.to)
-    } catch {
-      window.alert('Could not add comparative/superlative forms — saved without them.')
+    } catch (e) {
+      const reason = e instanceof Error ? e.message : 'unknown error'
+      window.alert(`Could not add comparative/superlative forms — saved without them. (${reason})`)
       return parsed
     }
   }
@@ -608,9 +609,10 @@ export function useAppState() {
       const parsed = rawWords.map((w, i) => ({ [pair.from]: w, [pair.to]: translations[i] }))
       setPasteParsed(await withForms(parsed, pair))
       setPasteLoading(false)
-    } catch {
+    } catch (e) {
       setPasteLoading(false)
-      window.alert('Could not translate — try again.')
+      const reason = e instanceof Error ? e.message : 'unknown error'
+      window.alert(`Could not translate — try again. (${reason})`)
     }
   }
 
@@ -663,9 +665,10 @@ export function useAppState() {
         setPasteAutoGuessed(true)
         setPasteAutoTranslated(true)
         setPasteLoading(false)
-      } catch {
+      } catch (e) {
         setPasteLoading(false)
-        window.alert('Could not translate — try again.')
+        const reason = e instanceof Error ? e.message : 'unknown error'
+        window.alert(`Could not translate — try again. (${reason})`)
       }
       return
     }
