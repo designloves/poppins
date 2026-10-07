@@ -1,5 +1,24 @@
 import { test, expect } from '@playwright/test'
 
+function fakeJwt(payload: Record<string, unknown>): string {
+  const b64url = (obj: unknown) =>
+    Buffer.from(JSON.stringify(obj))
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '')
+  return `${b64url({ alg: 'HS256', typ: 'JWT' })}.${b64url(payload)}.fakesig`
+}
+
+function signedInUrl(path: string): string {
+  const token = fakeJwt({
+    sub: 'user-123',
+    email: 'signedin@example.com',
+    exp: Math.floor(Date.now() / 1000) + 3600,
+  })
+  return `${path}#access_token=${token}&refresh_token=refresh-abc`
+}
+
 test('sharing a list copies a link to the clipboard when the Web Share API is unavailable', async ({
   page,
 }) => {
@@ -157,6 +176,76 @@ test('opening a share link prompts to add the shared list, and adds it on confir
   await expect(page.getByText('Frukt (Fruit)')).toBeVisible()
   await page.getByRole('button', { name: 'Mina listor' }).click()
   await expect(page.getByText('5 listor')).toBeVisible()
+})
+
+test('importing a shared list while signed in also saves a copy to the account', async ({
+  page,
+}) => {
+  await page.route('**/functions/v1/greta/sets/shared-3', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'shared-3',
+        topic: 'Kroppen (Body)',
+        vocab: [{ sv: 'hand', en: 'hand' }],
+        lang_from: 'sv',
+        lang_to: 'en',
+      }),
+    }),
+  )
+  await page.route('**/functions/v1/greta/sets', (route) => {
+    expect(route.request().headers()['authorization']).toMatch(/^Bearer /)
+    const body = JSON.parse(route.request().postData() ?? '{}')
+    expect(body.topic).toBe('Kroppen (Body)')
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: 'owned-copy-id' }),
+    })
+  })
+
+  await page.goto(signedInUrl('/?set=shared-3'))
+  await expect(page.getByText('Lägg till "Kroppen (Body)"', { exact: false })).toBeVisible()
+  await page.click('#app-dialog-confirm')
+
+  await expect(page.getByText('Kroppen (Body)')).toBeVisible()
+})
+
+test("if saving an imported list to the account fails, it's still added locally", async ({
+  page,
+}) => {
+  await page.route('**/functions/v1/greta/sets/shared-4', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'shared-4',
+        topic: 'Väder (Weather)',
+        vocab: [{ sv: 'regn', en: 'rain' }],
+        lang_from: 'sv',
+        lang_to: 'en',
+      }),
+    }),
+  )
+  await page.route('**/functions/v1/greta/sets', (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Server error' }),
+    }),
+  )
+
+  await page.goto(signedInUrl('/?set=shared-4'))
+  await expect(page.getByText('Lägg till "Väder (Weather)"', { exact: false })).toBeVisible()
+  await page.click('#app-dialog-confirm')
+
+  await expect(
+    page.getByText('kunde inte även spara den på kontot', { exact: false }),
+  ).toBeVisible()
+  await page.click('#app-dialog-confirm')
+
+  await expect(page.getByText('Väder (Weather)')).toBeVisible()
 })
 
 test('canceling the import prompt leaves lists unchanged', async ({ page }) => {
