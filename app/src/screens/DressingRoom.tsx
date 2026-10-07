@@ -125,14 +125,12 @@ const HANDLE_TOP_PADDING = 28
 const HANDLE_BOTTOM_PADDING = 18
 const TILES_PER_ROW = 4
 const TILE_GAP = 10
-// Back to the row's own small top padding, and the same left/right inset
-// as the header above the sheet — both were temporarily inflated to
-// match the handle's height while the handle still lived inside the
-// sheet (see git history); now that it floats outside, there's no longer
-// a reason to make the row's own, now-independent top and side padding
-// that much bigger than before.
-const ROW_TOP_PADDING = 8
-const ROW_BOTTOM_PADDING = 12
+// Even padding on all four sides of a tile row — top/bottom match
+// left/right instead of being their own smaller values, so a tile reads
+// as evenly inset from the sheet rather than closer to its top edge than
+// its sides.
+const ROW_TOP_PADDING = 16
+const ROW_BOTTOM_PADDING = 16
 const ROW_SIDE_PADDING = 16
 // Caps the tile (and so the sheet) from growing unreasonably large on a
 // wide viewport — tiles are sized off the available width so exactly 4
