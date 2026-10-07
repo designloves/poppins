@@ -32,7 +32,7 @@ export function Lists({
 
   function handleDelete(e: MouseEvent, id: string) {
     e.stopPropagation()
-    if (window.confirm('Permanently delete project?')) onDelete(id)
+    onDelete(id)
   }
 
   return (

@@ -1,4 +1,5 @@
 import { CoinFlight } from './components/CoinFlight'
+import { Dialog } from './components/Dialog'
 import { ScreenFx } from './components/ScreenFx'
 import { ViewportDebugBadge } from './components/ViewportDebugBadge'
 import { DressingRoom } from './screens/DressingRoom'
@@ -92,7 +93,7 @@ function App() {
         onBack={() => state.navigate('home')}
         onAddNew={state.openNewList}
         onSelect={state.selectList}
-        onDelete={state.deleteListById}
+        onDelete={state.confirmDeleteList}
       />
     )
   } else if (state.screen === 'paste') {
@@ -188,6 +189,15 @@ function App() {
         ))}
       </div>
       {new URLSearchParams(window.location.search).get('debug') === '1' && <ViewportDebugBadge />}
+      {state.dialog && (
+        <Dialog
+          message={state.dialog.message}
+          confirmLabel={state.dialog.confirmLabel}
+          cancelLabel={state.dialog.cancelLabel}
+          onConfirm={state.dialog.onConfirm}
+          onCancel={state.dialog.onCancel}
+        />
+      )}
     </div>
   )
 }

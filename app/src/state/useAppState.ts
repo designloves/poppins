@@ -11,7 +11,7 @@ import {
   type Word,
   type WordList,
 } from '../data/constants'
-import { TTS_LOCALE, type UiLang } from '../data/i18n'
+import { t, TTS_LOCALE, type UiLang } from '../data/i18n'
 import { COIN_FLIGHT_MS, type CoinFlightData } from '../components/CoinFlight'
 import type { ScreenFxKind } from '../components/ScreenFx'
 import type { QuizFeedback } from '../components/FeedbackBurst'
@@ -126,6 +126,37 @@ export function useAppState() {
   )
   const [showGreeting, setShowGreeting] = useState(false)
   const [greetingHiding, setGreetingHiding] = useState(false)
+
+  // ── Dialog ──
+  // Replaces window.alert()/window.confirm() — those render as unstyled
+  // native browser chrome, breaking out of the app's look. One piece of
+  // state drives a single themed overlay (see components/Dialog.tsx),
+  // raised via showAlert()/showConfirm() from anywhere below instead of
+  // each call site reaching for the native API directly.
+  const [dialog, setDialog] = useState<{
+    message: string
+    confirmLabel: string
+    cancelLabel?: string
+    onConfirm: () => void
+    onCancel?: () => void
+  } | null>(null)
+
+  function showAlert(message: string) {
+    setDialog({ message, confirmLabel: t(uiLang, 'ok'), onConfirm: () => setDialog(null) })
+  }
+
+  function showConfirm(message: string, confirmLabel: string, onYes: () => void) {
+    setDialog({
+      message,
+      confirmLabel,
+      cancelLabel: t(uiLang, 'cancel'),
+      onConfirm: () => {
+        setDialog(null)
+        onYes()
+      },
+      onCancel: () => setDialog(null),
+    })
+  }
 
   // ── Paste / edit list ──
   const [pasteName, setPasteName] = useState('')
@@ -550,9 +581,9 @@ export function useAppState() {
     }
     setTransferring(false)
     if (failures.length) {
-      window.alert(`Some lists could not be transferred:\n${failures.join('\n')}`)
+      showAlert(`${t(uiLang, 'transferPartialFailure')}\n${failures.join('\n')}`)
     } else {
-      window.alert('Your lists are saved to your account!')
+      showAlert(t(uiLang, 'transferSuccess'))
     }
   }
 
@@ -572,6 +603,12 @@ export function useAppState() {
   function deleteListById(id: string) {
     setLists((ls) => ls.filter((l) => l.id !== id))
     setActiveListId((cur) => (cur === id ? null : cur))
+  }
+
+  function confirmDeleteList(id: string) {
+    showConfirm(t(uiLang, 'deleteListConfirm'), t(uiLang, 'deleteConfirm'), () =>
+      deleteListById(id),
+    )
   }
 
   function saveNewList(list: WordList) {
@@ -648,7 +685,7 @@ export function useAppState() {
       return mergeForms(parsed, forms, pair.from, pair.to)
     } catch (e) {
       const reason = e instanceof Error ? e.message : 'unknown error'
-      window.alert(`Could not add comparative/superlative forms — saved without them. (${reason})`)
+      showAlert(t(uiLang, 'couldNotAddForms', { reason }))
       return parsed
     }
   }
@@ -669,7 +706,7 @@ export function useAppState() {
     } catch (e) {
       setPasteLoading(false)
       const reason = e instanceof Error ? e.message : 'unknown error'
-      window.alert(`Could not translate — try again. (${reason})`)
+      showAlert(t(uiLang, 'couldNotTranslate', { reason }))
     }
   }
 
@@ -725,7 +762,7 @@ export function useAppState() {
       } catch (e) {
         setPasteLoading(false)
         const reason = e instanceof Error ? e.message : 'unknown error'
-        window.alert(`Could not translate — try again. (${reason})`)
+        showAlert(t(uiLang, 'couldNotTranslate', { reason }))
       }
       return
     }
@@ -772,6 +809,7 @@ export function useAppState() {
   return {
     screen,
     navigate,
+    dialog,
     avatar,
     selectAvatar,
     avatarChanging,
@@ -804,7 +842,7 @@ export function useAppState() {
     activeList,
     activeListId,
     selectList,
-    deleteListById,
+    confirmDeleteList,
     openNewList,
     openEditList,
     closePaste,

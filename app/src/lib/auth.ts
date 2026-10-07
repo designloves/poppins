@@ -8,6 +8,17 @@ const SUPABASE_ANON_KEY = 'sb_publishable_nvKqUBjP0B-TmROc_aJtdA_U-P0pr_u'
 
 const SESSION_KEY = 'greta_session'
 
+// Hardcoded rather than derived from location.href: Supabase only
+// honors emailRedirectTo when it exactly matches an entry in Authentication
+// → URL Configuration → Redirect URLs (confirmed set to this exact path
+// and its wildcard), and when it doesn't, a magic-link email ends up
+// carrying a redirect that lands nowhere useful instead of falling back
+// to Site URL as you'd expect. This app only ever deploys to one real
+// place — GitHub Pages' /poppins/ path — so there's no dynamic case this
+// gives up (a PR preview's pr-preview/pr-<n>/ path was never covered by
+// the allow-list either).
+const REDIRECT_URL = 'https://designloves.github.io/poppins/'
+
 export interface CurrentUser {
   id: string
   email: string
@@ -65,7 +76,7 @@ export async function sendMagicLink(email: string): Promise<void> {
     body: JSON.stringify({
       email,
       create_user: true,
-      options: { emailRedirectTo: location.href.split('#')[0] },
+      options: { emailRedirectTo: REDIRECT_URL },
     }),
   })
   if (!res.ok) {

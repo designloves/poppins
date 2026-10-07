@@ -23,16 +23,19 @@ test('selecting a list makes it active and returns home', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Starta övning' })).toBeVisible()
 })
 
-test('deleting a list asks for confirmation and removes it on accept', async ({ page }) => {
+test("deleting a list asks for confirmation (in the app's own themed dialog, not a native one) and removes it on accept", async ({
+  page,
+}) => {
   await page.goto('/')
   await page.getByRole('button', { name: 'Mina listor' }).click()
 
-  page.once('dialog', (dialog) => dialog.dismiss())
   await page.locator('.card', { hasText: 'Skolan' }).locator('button').click()
+  await expect(page.getByText('Ta bort listan permanent?')).toBeVisible()
+  await page.click('#app-dialog-cancel')
   await expect(page.getByText('Skolan (School)')).toBeVisible()
 
-  page.once('dialog', (dialog) => dialog.accept())
   await page.locator('.card', { hasText: 'Skolan' }).locator('button').click()
+  await page.click('#app-dialog-confirm')
   await expect(page.getByText('Skolan (School)')).toBeHidden()
   await expect(page.getByText('3 listor')).toBeVisible()
 })
@@ -41,8 +44,8 @@ test('lists and the active list survive a reload', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: 'Mina listor' }).click()
 
-  page.once('dialog', (dialog) => dialog.accept())
   await page.locator('.card', { hasText: 'Skolan' }).locator('button').click()
+  await page.click('#app-dialog-confirm')
   await expect(page.getByText('3 listor')).toBeVisible()
   await page.getByText('Mat (Food)').click()
 

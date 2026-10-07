@@ -51,14 +51,9 @@ test('transferring lists uploads each one and reports success', async ({ page })
 
   await signInAndOpenSettings(page)
 
-  const dialogPromise = new Promise<string>((resolve) => {
-    page.once('dialog', (dialog) => {
-      resolve(dialog.message())
-      void dialog.accept()
-    })
-  })
   await page.click('#settings-transfer-lists')
-  await expect(await dialogPromise).toContain('saved to your account')
+  await expect(page.getByText('sparade på kontot', { exact: false })).toBeVisible()
+  await page.click('#app-dialog-confirm')
 
   expect(requests).toHaveLength(4)
 
@@ -85,16 +80,11 @@ test('a failed transfer reports which list failed without blocking the rest', as
 
   await signInAndOpenSettings(page)
 
-  const dialogPromise = new Promise<string>((resolve) => {
-    page.once('dialog', (dialog) => {
-      resolve(dialog.message())
-      void dialog.accept()
-    })
-  })
   await page.click('#settings-transfer-lists')
-  const message = await dialogPromise
-  expect(message).toContain('Mat (Food)')
-  expect(message).toContain('Max 20 words')
+  const dialogText = await page.locator('.card-lg').last().innerText()
+  expect(dialogText).toContain('Mat (Food)')
+  expect(dialogText).toContain('Max 20 words')
+  await page.click('#app-dialog-confirm')
 
   // The one that failed is still pending, so the button stays visible to retry.
   await expect(page.locator('#settings-transfer-lists')).toBeVisible()
