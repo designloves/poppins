@@ -80,6 +80,12 @@ const UI_STRINGS = {
     couldNotAddForms:
       'Could not add comparative/superlative forms — saved without them. ({reason})',
     couldNotTranslate: 'Could not translate — try again. ({reason})',
+    shareList: 'Share',
+    importSharedListConfirm: 'Add "{name}" ({words}) to your lists?',
+    add: 'Add',
+    couldNotLoadSharedList: 'Could not load the shared list. ({reason})',
+    couldNotShare: 'Could not create a share link. ({reason})',
+    shareLinkCopied: 'Link copied! Share it: {url}',
   },
   sv: {
     todaysList: 'Dagens lista',
@@ -158,6 +164,12 @@ const UI_STRINGS = {
     transferPartialFailure: 'Några listor kunde inte överföras:',
     couldNotAddForms: 'Kunde inte lägga till komparativ/superlativ — sparade utan dem. ({reason})',
     couldNotTranslate: 'Kunde inte översätta — försök igen. ({reason})',
+    shareList: 'Dela',
+    importSharedListConfirm: 'Lägg till "{name}" ({words}) i dina listor?',
+    add: 'Lägg till',
+    couldNotLoadSharedList: 'Kunde inte läsa in den delade listan. ({reason})',
+    couldNotShare: 'Kunde inte skapa en dela-länk. ({reason})',
+    shareLinkCopied: 'Länk kopierad! Dela den: {url}',
   },
 } as const
 

@@ -3,6 +3,8 @@
 // of our own. Re-syncing a user's lists to the server (POST /sets) is
 // a separate, explicit action — see lib/sets.ts and useAppState's
 // transferLists().
+import { APP_URL } from '../data/constants'
+
 const SUPABASE_URL = 'https://ivcnjkzuggwpxvnalbol.supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_nvKqUBjP0B-TmROc_aJtdA_U-P0pr_u'
 
@@ -17,7 +19,7 @@ const SESSION_KEY = 'greta_session'
 // place — GitHub Pages' /poppins/ path — so there's no dynamic case this
 // gives up (a PR preview's pr-preview/pr-<n>/ path was never covered by
 // the allow-list either).
-const REDIRECT_URL = 'https://designloves.github.io/poppins/'
+const REDIRECT_URL = APP_URL
 
 export interface CurrentUser {
   id: string

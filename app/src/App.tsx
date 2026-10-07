@@ -94,6 +94,7 @@ function App() {
         onAddNew={state.openNewList}
         onSelect={state.selectList}
         onDelete={state.confirmDeleteList}
+        onShare={state.shareList}
       />
     )
   } else if (state.screen === 'paste') {
