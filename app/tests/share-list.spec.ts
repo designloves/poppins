@@ -29,8 +29,7 @@ test('sharing a list copies a link to the clipboard when the Web Share API is un
   })
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'Mina listor' }).click()
-  await page.locator('.card', { hasText: 'Djur' }).locator('button[title="Dela"]').click()
+  await page.click('button[title="Dela"]')
 
   await expect(page.getByText('Länk kopierad!', { exact: false })).toBeVisible()
   const clipboardText = await page.evaluate(
@@ -60,8 +59,7 @@ test('sharing a list uses the native share sheet when available', async ({ page 
   )
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'Mina listor' }).click()
-  await page.locator('.card', { hasText: 'Djur' }).locator('button[title="Dela"]').click()
+  await page.click('button[title="Dela"]')
 
   await expect
     .poll(() =>
@@ -119,8 +117,7 @@ test('sharing a list already transferred to an account reuses its remoteId inste
   })
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'Mina listor' }).click()
-  await page.locator('.card', { hasText: 'Djur' }).locator('button[title="Dela"]').click()
+  await page.click('button[title="Dela"]')
 
   const clipboardText = await page.evaluate(
     () => (window as unknown as { __clipboardText: string | null }).__clipboardText,

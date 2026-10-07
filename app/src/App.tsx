@@ -30,6 +30,7 @@ function App() {
       greetMascot={state.greetMascot}
       onNewList={state.openNewList}
       onEditList={state.openEditList}
+      onShareList={state.shareList}
       onOpenDressingRoom={state.openDressingRoom}
     />
   )
@@ -94,7 +95,6 @@ function App() {
         onAddNew={state.openNewList}
         onSelect={state.selectList}
         onDelete={state.confirmDeleteList}
-        onShare={state.shareList}
       />
     )
   } else if (state.screen === 'paste') {

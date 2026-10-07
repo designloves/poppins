@@ -5,7 +5,7 @@ import { accentText, COLOR_MAP } from '../data/constants'
 import type { AvatarKey, WordList } from '../data/constants'
 import { LANGUAGE_CODES, t, wordsCountText } from '../data/i18n'
 import type { UiLang } from '../data/i18n'
-import { ArrowRight, Bloom, Books, Pencil, Plus } from '../icons/icons'
+import { ArrowRight, Bloom, Books, Pencil, Plus, Share } from '../icons/icons'
 import { Mascot } from '../icons/Mascot'
 import { Wardrobe } from '../icons/Wardrobe'
 import type { Screen } from '../state/useAppState'
@@ -23,6 +23,7 @@ interface HomeProps {
   greetMascot: (greeting: string) => void
   onNewList: () => void
   onEditList: () => void
+  onShareList: (id: string) => void
   onOpenDressingRoom: () => void
 }
 
@@ -39,6 +40,7 @@ export function Home({
   greetMascot,
   onNewList,
   onEditList,
+  onShareList,
   onOpenDressingRoom,
 }: HomeProps) {
   const accent = accentText(avatar)
@@ -147,6 +149,7 @@ export function Home({
           accent={accent}
           navigate={navigate}
           onEditList={onEditList}
+          onShareList={onShareList}
           onNewList={onNewList}
         />
       ) : (
@@ -162,6 +165,7 @@ function ListCard({
   accent,
   navigate,
   onEditList,
+  onShareList,
   onNewList,
 }: {
   list: WordList
@@ -169,6 +173,7 @@ function ListCard({
   accent: string
   navigate: (screen: Screen) => void
   onEditList: () => void
+  onShareList: (id: string) => void
   onNewList: () => void
 }) {
   return (
@@ -182,6 +187,27 @@ function ListCard({
           padding: 16,
         }}
       >
+        <Button
+          title={t(uiLang, 'shareList')}
+          onClick={() => onShareList(list.id)}
+          style={{
+            position: 'absolute',
+            top: 15,
+            right: 61,
+            background: 'var(--paper)',
+            border: 'var(--border-thin)',
+            borderRadius: 999,
+            width: 38,
+            height: 38,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            zIndex: 2,
+          }}
+        >
+          <Share size={17} color="#241F3D" />
+        </Button>
         <Button
           title={t(uiLang, 'editList')}
           onClick={onEditList}
@@ -203,7 +229,7 @@ function ListCard({
         >
           <Pencil size={17} color="#241F3D" />
         </Button>
-        <div style={{ paddingRight: 46 }}>
+        <div style={{ paddingRight: 92 }}>
           <h2
             className="h-font"
             style={{
