@@ -3,7 +3,7 @@ import type { MouseEvent } from 'react'
 import { accentText, COLOR_MAP, type AvatarKey, type WordList } from '../data/constants'
 import { LANGUAGE_CODES, listsCountText, t, wordsCountText } from '../data/i18n'
 import type { UiLang } from '../data/i18n'
-import { ArrowBack, Bloom, Check, Plus, Share, Trash } from '../icons/icons'
+import { ArrowBack, Bloom, Check, Plus, Trash } from '../icons/icons'
 import { useSwipeBack } from '../lib/useSwipeBack'
 
 interface ListsProps {
@@ -15,7 +15,6 @@ interface ListsProps {
   onAddNew: () => void
   onSelect: (id: string) => void
   onDelete: (id: string) => void
-  onShare: (id: string) => void
 }
 
 export function Lists({
@@ -27,7 +26,6 @@ export function Lists({
   onAddNew,
   onSelect,
   onDelete,
-  onShare,
 }: ListsProps) {
   useSwipeBack(onBack)
   const accent = accentText(avatar)
@@ -35,11 +33,6 @@ export function Lists({
   function handleDelete(e: MouseEvent, id: string) {
     e.stopPropagation()
     onDelete(id)
-  }
-
-  function handleShare(e: MouseEvent, id: string) {
-    e.stopPropagation()
-    onShare(id)
   }
 
   return (
@@ -128,19 +121,6 @@ export function Lists({
                     {LANGUAGE_CODES[list.from] ?? 'SV'} → {LANGUAGE_CODES[list.to] ?? 'EN'}
                   </div>
                 </div>
-                <Button
-                  title={t(uiLang, 'shareList')}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: 4,
-                    flexShrink: 0,
-                  }}
-                  onClick={(e) => handleShare(e, list.id)}
-                >
-                  <Share size={16} color="#241F3D" />
-                </Button>
                 <Button
                   style={{
                     background: 'transparent',

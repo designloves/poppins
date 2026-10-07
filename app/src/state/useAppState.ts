@@ -194,6 +194,17 @@ export function useAppState() {
   // user push their local lists up explicitly (see Settings).
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const [sessionToken, setSessionToken] = useState<string | null>(null)
+  // The share-link-import effect below only runs once, at mount (it reads
+  // a URL param, not something to re-run on every auth change) — but its
+  // "add to my lists" confirmation fires much later, after a human reads
+  // and taps the dialog. A closure over `sessionToken` itself would stay
+  // stuck on whatever it was at mount (null, before initAuth() resolves).
+  // This ref is kept in sync every render instead, so that confirm
+  // handler reads whether you're actually signed in by the time you tap it.
+  const sessionTokenRef = useRef(sessionToken)
+  useEffect(() => {
+    sessionTokenRef.current = sessionToken
+  })
   const [loginEmail, setLoginEmail] = useState('')
   const [loginSent, setLoginSent] = useState(false)
   const [loginErr, setLoginErr] = useState('')
@@ -234,18 +245,42 @@ export function useAppState() {
           }),
           t(uiLang, 'add'),
           () => {
-            const newList: WordList = {
-              id: 'shared-' + set.id,
-              name: set.topic,
-              color: NEW_LIST_COLORS[Math.floor(Math.random() * NEW_LIST_COLORS.length)],
-              words: set.vocab,
-              from: set.lang_from,
-              to: set.lang_to,
-              remoteId: set.id,
-            }
-            setLists((ls) => (ls.some((l) => l.remoteId === set.id) ? ls : [...ls, newList]))
-            setActiveListId(newList.id)
-            navigate('home')
+            void (async () => {
+              const localId = 'shared-' + set.id
+              // Defaults to the shared set's own id (so a second open of
+              // the same link is still deduped below) — but if you're
+              // signed in, this becomes your own saved copy's id instead,
+              // so the import actually lands in your account too, not
+              // just this device's local cache.
+              let remoteId = set.id
+              const token = sessionTokenRef.current
+              if (token) {
+                try {
+                  const saved = await saveSet(token, {
+                    topic: set.topic,
+                    vocab: set.vocab,
+                    lang_from: set.lang_from,
+                    lang_to: set.lang_to,
+                  })
+                  remoteId = saved.id
+                } catch (e) {
+                  const reason = e instanceof Error ? e.message : 'unknown error'
+                  showAlert(t(uiLang, 'couldNotSaveSharedListToAccount', { reason }))
+                }
+              }
+              const newList: WordList = {
+                id: localId,
+                name: set.topic,
+                color: NEW_LIST_COLORS[Math.floor(Math.random() * NEW_LIST_COLORS.length)],
+                words: set.vocab,
+                from: set.lang_from,
+                to: set.lang_to,
+                remoteId,
+              }
+              setLists((ls) => (ls.some((l) => l.id === localId) ? ls : [...ls, newList]))
+              setActiveListId(localId)
+              navigate('home')
+            })()
           },
         )
       })
@@ -636,11 +671,13 @@ export function useAppState() {
     }
   }
 
-  // Creates (or reuses) a shareable link for a list and hands it off via
-  // the native share sheet, falling back to clipboard copy where that's
-  // not available. Works whether or not you're signed in — an anonymous
-  // POST /sets just creates an unowned set (see supabase/functions/greta/
-  // index.ts's saveSet handler) — so sharing never requires logging in.
+  // Creates (or reuses) a shareable link for a list and copies it to the
+  // clipboard, with a themed confirmation — same result every tap, not
+  // just the first one for a given list (only the upload is skipped on a
+  // repeat share, never the copy). Works whether or not you're signed
+  // in — an anonymous POST /sets just creates an unowned set (see
+  // supabase/functions/greta/index.ts's saveSet handler) — so sharing
+  // never requires logging in.
   async function shareList(id: string) {
     const list = lists.find((l) => l.id === id)
     if (!list) return
@@ -657,17 +694,8 @@ export function useAppState() {
         setLists((ls) => ls.map((l) => (l.id === id ? { ...l, remoteId } : l)))
       }
       const url = `${APP_URL}?set=${remoteId}`
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: list.name, url })
-        } catch (e) {
-          if (e instanceof Error && e.name === 'AbortError') return
-          throw e
-        }
-      } else {
-        await navigator.clipboard.writeText(url)
-        showAlert(t(uiLang, 'shareLinkCopied', { url }))
-      }
+      await navigator.clipboard.writeText(url)
+      showAlert(t(uiLang, 'shareLinkCopied', { url }))
     } catch (e) {
       const reason = e instanceof Error ? e.message : 'unknown error'
       showAlert(t(uiLang, 'couldNotShare', { reason }))

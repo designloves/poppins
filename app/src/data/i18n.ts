@@ -86,6 +86,8 @@ const UI_STRINGS = {
     couldNotLoadSharedList: 'Could not load the shared list. ({reason})',
     couldNotShare: 'Could not create a share link. ({reason})',
     shareLinkCopied: 'Link copied! Share it: {url}',
+    couldNotSaveSharedListToAccount:
+      'Added to your lists, but could not also save it to your account. ({reason})',
   },
   sv: {
     todaysList: 'Dagens lista',
@@ -170,6 +172,8 @@ const UI_STRINGS = {
     couldNotLoadSharedList: 'Kunde inte läsa in den delade listan. ({reason})',
     couldNotShare: 'Kunde inte skapa en dela-länk. ({reason})',
     shareLinkCopied: 'Länk kopierad! Dela den: {url}',
+    couldNotSaveSharedListToAccount:
+      'Tillagd i dina listor, men kunde inte även spara den på kontot. ({reason})',
   },
 } as const
 
