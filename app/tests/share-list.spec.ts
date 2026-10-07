@@ -19,11 +19,8 @@ function signedInUrl(path: string): string {
   return `${path}#access_token=${token}&refresh_token=refresh-abc`
 }
 
-test('sharing a list copies a link to the clipboard when the Web Share API is unavailable', async ({
-  page,
-}) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(window.navigator, 'share', { value: undefined, configurable: true })
+function stubClipboard(page: import('@playwright/test').Page) {
+  return page.addInitScript(() => {
     ;(window as unknown as { __clipboardText: string | null }).__clipboardText = null
     Object.defineProperty(window.navigator, 'clipboard', {
       value: {
@@ -35,8 +32,16 @@ test('sharing a list copies a link to the clipboard when the Web Share API is un
       configurable: true,
     })
   })
+}
 
+test('sharing a list copies a link to the clipboard, every time — not just the first', async ({
+  page,
+}) => {
+  await stubClipboard(page)
+
+  let uploads = 0
   await page.route('**/functions/v1/greta/sets', (route) => {
+    uploads++
     const body = JSON.parse(route.request().postData() ?? '{}')
     expect(body.topic).toBe('Djur (Animals)')
     expect(route.request().headers()['authorization']).toBeUndefined()
@@ -51,44 +56,25 @@ test('sharing a list copies a link to the clipboard when the Web Share API is un
   await page.click('button[title="Dela"]')
 
   await expect(page.getByText('Länk kopierad!', { exact: false })).toBeVisible()
-  const clipboardText = await page.evaluate(
+  let clipboardText = await page.evaluate(
     () => (window as unknown as { __clipboardText: string | null }).__clipboardText,
   )
   expect(clipboardText).toBe('https://designloves.github.io/poppins/?set=shared-abc')
-})
+  expect(uploads).toBe(1)
 
-test('sharing a list uses the native share sheet when available', async ({ page }) => {
-  await page.addInitScript(() => {
-    ;(window as unknown as { __shareCalls: unknown[] }).__shareCalls = []
-    Object.defineProperty(window.navigator, 'share', {
-      value: (data: unknown) => {
-        ;(window as unknown as { __shareCalls: unknown[] }).__shareCalls.push(data)
-        return Promise.resolve()
-      },
-      configurable: true,
-    })
+  // Sharing the same list again: the link is re-copied and the dialog
+  // shown again, but nothing is re-uploaded (it already has a remoteId).
+  await page.click('#app-dialog-confirm')
+  await page.evaluate(() => {
+    ;(window as unknown as { __clipboardText: string | null }).__clipboardText = null
   })
-
-  await page.route('**/functions/v1/greta/sets', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ id: 'shared-xyz' }),
-    }),
-  )
-
-  await page.goto('/')
   await page.click('button[title="Dela"]')
-
-  await expect
-    .poll(() =>
-      page.evaluate(() => (window as unknown as { __shareCalls: unknown[] }).__shareCalls.length),
-    )
-    .toBeGreaterThan(0)
-  const calls = await page.evaluate(
-    () => (window as unknown as { __shareCalls: { url: string }[] }).__shareCalls,
+  await expect(page.getByText('Länk kopierad!', { exact: false })).toBeVisible()
+  clipboardText = await page.evaluate(
+    () => (window as unknown as { __clipboardText: string | null }).__clipboardText,
   )
-  expect(calls[0].url).toBe('https://designloves.github.io/poppins/?set=shared-xyz')
+  expect(clipboardText).toBe('https://designloves.github.io/poppins/?set=shared-abc')
+  expect(uploads).toBe(1)
 })
 
 test('sharing a list already transferred to an account reuses its remoteId instead of re-uploading', async ({
@@ -112,18 +98,8 @@ test('sharing a list already transferred to an account reuses its remoteId inste
         activeListId: 'djur',
       }),
     )
-    Object.defineProperty(window.navigator, 'share', { value: undefined, configurable: true })
-    ;(window as unknown as { __clipboardText: string | null }).__clipboardText = null
-    Object.defineProperty(window.navigator, 'clipboard', {
-      value: {
-        writeText: (text: string) => {
-          ;(window as unknown as { __clipboardText: string | null }).__clipboardText = text
-          return Promise.resolve()
-        },
-      },
-      configurable: true,
-    })
   })
+  await stubClipboard(page)
 
   let postCalled = false
   await page.route('**/functions/v1/greta/sets', (route) => {

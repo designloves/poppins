@@ -671,11 +671,13 @@ export function useAppState() {
     }
   }
 
-  // Creates (or reuses) a shareable link for a list and hands it off via
-  // the native share sheet, falling back to clipboard copy where that's
-  // not available. Works whether or not you're signed in — an anonymous
-  // POST /sets just creates an unowned set (see supabase/functions/greta/
-  // index.ts's saveSet handler) — so sharing never requires logging in.
+  // Creates (or reuses) a shareable link for a list and copies it to the
+  // clipboard, with a themed confirmation — same result every tap, not
+  // just the first one for a given list (only the upload is skipped on a
+  // repeat share, never the copy). Works whether or not you're signed
+  // in — an anonymous POST /sets just creates an unowned set (see
+  // supabase/functions/greta/index.ts's saveSet handler) — so sharing
+  // never requires logging in.
   async function shareList(id: string) {
     const list = lists.find((l) => l.id === id)
     if (!list) return
@@ -692,17 +694,8 @@ export function useAppState() {
         setLists((ls) => ls.map((l) => (l.id === id ? { ...l, remoteId } : l)))
       }
       const url = `${APP_URL}?set=${remoteId}`
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: list.name, url })
-        } catch (e) {
-          if (e instanceof Error && e.name === 'AbortError') return
-          throw e
-        }
-      } else {
-        await navigator.clipboard.writeText(url)
-        showAlert(t(uiLang, 'shareLinkCopied', { url }))
-      }
+      await navigator.clipboard.writeText(url)
+      showAlert(t(uiLang, 'shareLinkCopied', { url }))
     } catch (e) {
       const reason = e instanceof Error ? e.message : 'unknown error'
       showAlert(t(uiLang, 'couldNotShare', { reason }))
