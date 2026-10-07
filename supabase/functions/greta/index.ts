@@ -103,11 +103,18 @@ async function getSet(url: URL) {
   return json(data)
 }
 
-// ── POST /sets — auth required, save a new set ──────────
+// ── POST /sets — save a new set ──────────────────────────
+// Auth is optional: a signed-in caller's set is owned (user_id set, shows
+// up in their GET /sets), letting them edit/delete it later. An anonymous
+// caller gets an unowned, shareable set instead — this is how "share a
+// list" works without requiring login: the returned id becomes a
+// ?set=<id> link anyone can load via the public GET /sets/:id below.
+// An anonymous set can't later be edited or deleted (those still require
+// auth and are scoped to a real user_id), which is fine for a one-shot
+// share link.
 
 async function saveSet(req: Request) {
   const user = await getUser(req)
-  if (!user) return err('Unauthorized', 401)
 
   let body: { topic?: string; vocab?: unknown[]; lang_from?: string; lang_to?: string }
   try { body = await req.json() }
@@ -120,7 +127,7 @@ async function saveSet(req: Request) {
   const { data, error } = await db()
     .from('word_sets')
     .insert({
-      topic, vocab, word_count: vocab.length, user_id: user.id,
+      topic, vocab, word_count: vocab.length, user_id: user?.id ?? null,
       lang_from: lang_from || 'sv', lang_to: lang_to || 'en',
     })
     .select('id')

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  APP_URL,
   AVATAR_BUTTON,
   AVATAR_BUTTON_TEXT,
   AVATAR_TINTS,
@@ -11,7 +12,7 @@ import {
   type Word,
   type WordList,
 } from '../data/constants'
-import { t, TTS_LOCALE, type UiLang } from '../data/i18n'
+import { t, wordsCountText, TTS_LOCALE, type UiLang } from '../data/i18n'
 import { COIN_FLIGHT_MS, type CoinFlightData } from '../components/CoinFlight'
 import type { ScreenFxKind } from '../components/ScreenFx'
 import type { QuizFeedback } from '../components/FeedbackBurst'
@@ -25,7 +26,7 @@ import {
 } from '../lib/pasteParsing'
 import { shuffle } from '../lib/shuffle'
 import { nudgeThemeColor } from '../lib/nudgeThemeColor'
-import { saveSet } from '../lib/sets'
+import { getSet, saveSet } from '../lib/sets'
 import { playCorrectSound, playWrongSound } from '../lib/sound'
 import { fetchAdjectiveForms, translateWords } from '../lib/translate'
 
@@ -206,6 +207,54 @@ export function useAppState() {
         setSessionToken(result.token)
       }
     })
+  }, [])
+
+  // Picks up a ?set=<id> link (from shareList() below, opened on another
+  // device or by someone else entirely) once on app start. The param is
+  // stripped immediately regardless of how the prompt below is answered,
+  // so it's never re-offered on a later reload.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const sharedId = params.get('set')
+    if (!sharedId) return
+    const url = new URL(location.href)
+    url.searchParams.delete('set')
+    try {
+      history.replaceState(null, '', url.pathname + url.search + url.hash)
+    } catch {
+      // ignore — worst case the param lingers in the address bar
+    }
+
+    getSet(sharedId)
+      .then((set) => {
+        showConfirm(
+          t(uiLang, 'importSharedListConfirm', {
+            name: set.topic,
+            words: wordsCountText(uiLang, set.vocab.length),
+          }),
+          t(uiLang, 'add'),
+          () => {
+            const newList: WordList = {
+              id: 'shared-' + set.id,
+              name: set.topic,
+              color: NEW_LIST_COLORS[Math.floor(Math.random() * NEW_LIST_COLORS.length)],
+              words: set.vocab,
+              from: set.lang_from,
+              to: set.lang_to,
+              remoteId: set.id,
+            }
+            setLists((ls) => (ls.some((l) => l.remoteId === set.id) ? ls : [...ls, newList]))
+            setActiveListId(newList.id)
+            navigate('home')
+          },
+        )
+      })
+      .catch((e) => {
+        const reason = e instanceof Error ? e.message : 'unknown error'
+        showAlert(t(uiLang, 'couldNotLoadSharedList', { reason }))
+      })
+    // Only ever meant to handle the link the app was opened with.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── Quiz ──
@@ -587,6 +636,44 @@ export function useAppState() {
     }
   }
 
+  // Creates (or reuses) a shareable link for a list and hands it off via
+  // the native share sheet, falling back to clipboard copy where that's
+  // not available. Works whether or not you're signed in — an anonymous
+  // POST /sets just creates an unowned set (see supabase/functions/greta/
+  // index.ts's saveSet handler) — so sharing never requires logging in.
+  async function shareList(id: string) {
+    const list = lists.find((l) => l.id === id)
+    if (!list) return
+    try {
+      let remoteId = list.remoteId
+      if (!remoteId) {
+        const saved = await saveSet(sessionToken, {
+          topic: list.name,
+          vocab: list.words,
+          lang_from: list.from,
+          lang_to: list.to,
+        })
+        remoteId = saved.id
+        setLists((ls) => ls.map((l) => (l.id === id ? { ...l, remoteId } : l)))
+      }
+      const url = `${APP_URL}?set=${remoteId}`
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: list.name, url })
+        } catch (e) {
+          if (e instanceof Error && e.name === 'AbortError') return
+          throw e
+        }
+      } else {
+        await navigator.clipboard.writeText(url)
+        showAlert(t(uiLang, 'shareLinkCopied', { url }))
+      }
+    } catch (e) {
+      const reason = e instanceof Error ? e.message : 'unknown error'
+      showAlert(t(uiLang, 'couldNotShare', { reason }))
+    }
+  }
+
   function openDressingRoom() {
     navigate('dressingRoom')
   }
@@ -843,6 +930,7 @@ export function useAppState() {
     activeListId,
     selectList,
     confirmDeleteList,
+    shareList,
     openNewList,
     openEditList,
     closePaste,

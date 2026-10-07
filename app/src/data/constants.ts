@@ -1,5 +1,10 @@
 export type Word = Record<string, string>
 
+// The one place this app is actually deployed — used to build absolute
+// links (magic-link email redirects, list share links) that work
+// regardless of where in the app the action was triggered from.
+export const APP_URL = 'https://designloves.github.io/poppins/'
+
 export interface WordList {
   id: string
   from: string
@@ -7,8 +12,11 @@ export interface WordList {
   name: string
   color: keyof typeof COLOR_MAP
   words: Word[]
-  // Set once this list has been uploaded via POST /sets, so a repeat
-  // "transfer my lists" action skips it instead of creating a duplicate.
+  // Set once this list has been uploaded via POST /sets — either by
+  // transferring it to an account, or by sharing it (both hit the same
+  // endpoint, and sharing a list you've already transferred reuses that
+  // upload instead of creating a second one). Skips re-uploading on a
+  // repeat transfer/share.
   remoteId?: string
 }
 

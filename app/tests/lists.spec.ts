@@ -29,12 +29,13 @@ test("deleting a list asks for confirmation (in the app's own themed dialog, not
   await page.goto('/')
   await page.getByRole('button', { name: 'Mina listor' }).click()
 
-  await page.locator('.card', { hasText: 'Skolan' }).locator('button').click()
+  const skolanDelete = page.locator('.card', { hasText: 'Skolan' }).locator('button:not([title])')
+  await skolanDelete.click()
   await expect(page.getByText('Ta bort listan permanent?')).toBeVisible()
   await page.click('#app-dialog-cancel')
   await expect(page.getByText('Skolan (School)')).toBeVisible()
 
-  await page.locator('.card', { hasText: 'Skolan' }).locator('button').click()
+  await skolanDelete.click()
   await page.click('#app-dialog-confirm')
   await expect(page.getByText('Skolan (School)')).toBeHidden()
   await expect(page.getByText('3 listor')).toBeVisible()
@@ -44,7 +45,7 @@ test('lists and the active list survive a reload', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: 'Mina listor' }).click()
 
-  await page.locator('.card', { hasText: 'Skolan' }).locator('button').click()
+  await page.locator('.card', { hasText: 'Skolan' }).locator('button:not([title])').click()
   await page.click('#app-dialog-confirm')
   await expect(page.getByText('3 listor')).toBeVisible()
   await page.getByText('Mat (Food)').click()
