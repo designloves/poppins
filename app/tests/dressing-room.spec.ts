@@ -142,3 +142,18 @@ test('back button returns home', async ({ page }) => {
   await page.click('#dressing-room-close')
   await expect(page.getByText('Djur (Animals)')).toBeVisible()
 })
+
+test("#frame's background matches the paper-colored sheet while open, so Safari's chrome blends with it instead of showing the avatar tint as a block", async ({
+  page,
+}) => {
+  await page.goto('/')
+  // The default avatar's own tint, confirmed elsewhere (settings.spec.ts)
+  // to be what #frame shows outside the dressing room.
+  await expect(page.locator('#frame')).toHaveCSS('background-color', 'rgb(245, 237, 230)')
+
+  await page.click('button[title="Garderoben"]')
+  await expect(page.locator('#frame')).toHaveCSS('background-color', 'rgb(244, 241, 232)')
+
+  await page.click('#dressing-room-close')
+  await expect(page.locator('#frame')).toHaveCSS('background-color', 'rgb(245, 237, 230)')
+})
