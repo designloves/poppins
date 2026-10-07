@@ -1,6 +1,6 @@
 import type { PointerEvent } from 'react'
 import { Button } from '@base-ui/react/button'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AvatarImage } from '../components/AvatarImage'
 import { Coin } from '../components/Coin'
 import { ACCESSORIES, type Accessory } from '../data/accessories'
@@ -8,6 +8,7 @@ import { FULL_BODY_AVATARS, type AvatarKey } from '../data/constants'
 import { accessoryName, t, type UiLang } from '../data/i18n'
 import { ArrowBack, Check } from '../icons/icons'
 import { ACCESSORY_ICONS } from '../icons/accessoryIcons'
+import { nudgeThemeColor } from '../lib/nudgeThemeColor'
 
 // One square tile — just the icon, maximized, with the price below it —
 // used both in the wide-open grid and the peek row so browsing and
@@ -180,6 +181,28 @@ export function DressingRoom({
     measure()
     window.addEventListener('resize', measure)
     return () => window.removeEventListener('resize', measure)
+  }, [])
+
+  // The sheet below is paper-colored and always sits flush against the
+  // very bottom of the screen, in every sheet state (even 'closed' is
+  // still a short paper-colored strip, not fully gone) — but Safari tints
+  // its own bottom toolbar by sampling #frame's own declared
+  // background-color (see index.css), which is otherwise always --bg
+  // (the avatar tint). Without this, Safari's toolbar shows that cream
+  // tint while the paper-white sheet sits right above it, reading as a
+  // solid block instead of the sheet extending underneath. A direct
+  // inline-style write, not a stylesheet rule change, is what Safari
+  // actually reacts to live here — the same finding behind the avatar
+  // tint effect's own body.style.backgroundColor write in useAppState.ts.
+  useEffect(() => {
+    const frame = document.getElementById('frame')
+    if (!frame) return
+    frame.style.backgroundColor = 'var(--paper)'
+    nudgeThemeColor()
+    return () => {
+      frame.style.backgroundColor = ''
+      nudgeThemeColor()
+    }
   }, [])
 
   // Square tiles, sized off the available width so exactly 4 fit per row
