@@ -6,6 +6,27 @@ async function startQuiz(page: Page) {
   await page.getByRole('button', { name: 'Svara på engelska' }).click()
 }
 
+async function assertNoPageScroll(page: Page) {
+  const { scrollHeight, viewportHeight } = await page.evaluate(() => ({
+    scrollHeight: document.documentElement.scrollHeight,
+    viewportHeight: window.innerHeight,
+  }))
+  expect(scrollHeight).toBeLessThanOrEqual(viewportHeight + 2)
+}
+
+const SV_TO_EN: Record<string, string> = {
+  katt: 'cat',
+  hund: 'dog',
+  häst: 'horse',
+  fågel: 'bird',
+  kanin: 'rabbit',
+  räv: 'fox',
+  björn: 'bear',
+  ekorre: 'squirrel',
+  groda: 'frog',
+  fjäril: 'butterfly',
+}
+
 test('the app frame fills the full viewport width', async ({ page }) => {
   await page.goto('/')
   const viewport = page.viewportSize()!
@@ -80,4 +101,82 @@ test('no horizontal scroll appears on any screen at a real phone width', async (
   await page.press('#quiz-input', 'Enter')
   await page.getByText('Övning').waitFor({ timeout: 3000 })
   await assertNoHorizontalOverflow()
+})
+
+// Regression test: a flex item defaults to min-height:auto (its content's
+// own intrinsic size), not 0 — so flex:1 + overflow-y:auto alone doesn't
+// actually scroll internally once the content is tall enough; it pushes
+// the parent taller instead, which pushes the Avbryt/Sortera row below
+// past the screen's own bottom edge. At that point the row's hard
+// box-shadow (ink overflow, not real layout) gets clipped where #screen's
+// own overflow-y:auto cuts off, since it isn't given its own extra scroll
+// room the way real content is.
+test('a long pasted word list scrolls internally instead of pushing the button row off-screen', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Ny' }).click()
+  await page.fill('#paste-name', 'Long list')
+  const lines = Array.from({ length: 40 }, (_, i) => `ord${i} = word${i}`).join('\n')
+  await page.fill('#paste-text', lines)
+  await assertNoPageScroll(page)
+
+  await page.click('#paste-parse')
+  await expect(page.getByText('Hittade 40 ord')).toBeVisible()
+  await assertNoPageScroll(page)
+})
+
+test('many lists scroll internally, keeping "Add a new list" within the viewport', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const lists = Array.from({ length: 15 }, (_, i) => ({
+      id: `list-${i}`,
+      from: 'sv',
+      to: 'en',
+      name: `Lista ${i}`,
+      color: 'rose',
+      words: [{ sv: 'ett', en: 'one' }],
+    }))
+    localStorage.setItem('poppins_settings_v1', JSON.stringify({ lists, activeListId: 'list-0' }))
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Mina listor' }).click()
+  await assertNoPageScroll(page)
+})
+
+// Regression test: overflow:hidden on the done screen's shared container
+// (there to keep the falling confetti animation from spilling past the
+// screen's bounds) was also clipping the star badges' and buttons' own
+// box-shadow below them whenever it bled past that same boundary — a
+// different kind of clipping than the flex/min-height bug above, but the
+// same visible symptom (a hard-edged shadow cut off instead of complete).
+// The confetti now has its own, separately clipped layer.
+test("the done screen's content isn't inside the confetti's own clipped layer", async ({
+  page,
+}) => {
+  await startQuiz(page)
+  for (let i = 0; i < 10; i++) {
+    const word = (
+      await page
+        .locator('.h-font')
+        .filter({ hasText: /^[a-zåäö]+$/i })
+        .first()
+        .textContent()
+    )?.trim()
+    await page.fill('#quiz-input', SV_TO_EN[word ?? ''])
+    await page.press('#quiz-input', 'Enter')
+    await page.waitForTimeout(1800)
+  }
+  await page.waitForSelector('#done-again')
+
+  const hasHiddenAncestor = await page.evaluate(() => {
+    let el: HTMLElement | null = document.getElementById('done-again')
+    while (el && el.id !== 'screen') {
+      if (getComputedStyle(el).overflow === 'hidden') return true
+      el = el.parentElement
+    }
+    return false
+  })
+  expect(hasHiddenAncestor).toBe(false)
 })

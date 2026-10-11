@@ -59,7 +59,21 @@ export function Lists({
         </Button>
       </div>
       <div
-        style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, overflowY: 'auto' }}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          flex: 1,
+          // Without this, a flex item defaults to min-height:auto — its
+          // content's intrinsic size, not 0 — so with enough lists this
+          // area wouldn't scroll internally at all; it'd just push the
+          // "Add a new list" button below past the screen's own bottom
+          // edge instead, clipping its box-shadow where #screen's own
+          // overflow-y:auto cuts off (ink overflow like a hard
+          // box-shadow doesn't get its own extra scroll room there).
+          minHeight: 0,
+          overflowY: 'auto',
+        }}
       >
         {lists.length ? (
           lists.map((list) => {
