@@ -59,7 +59,31 @@ export function Lists({
         </Button>
       </div>
       <div
-        style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, overflowY: 'auto' }}
+        data-testid="lists-scroll-area"
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          flex: 1,
+          // Without this, a flex item defaults to min-height:auto — its
+          // content's intrinsic size, not 0 — so with enough lists this
+          // area wouldn't scroll internally at all; it'd just push the
+          // "Add a new list" button below past the screen's own bottom
+          // edge instead, clipping its box-shadow where #screen's own
+          // overflow-y:auto cuts off (ink overflow like a hard
+          // box-shadow doesn't get its own extra scroll room there).
+          minHeight: 0,
+          overflowY: 'auto',
+          // Without this, overflow-x computes to auto (not its own
+          // 'visible' default) once overflow-y is non-visible — turning
+          // a few stray px of width (scrollbar gutter math, sub-pixel
+          // rounding) into a real, swipeable horizontal scroll confined
+          // to this one area, invisible to a page-level overflow check
+          // since #screen's own overflow-x:hidden only clips at the
+          // document level, not inside a nested scroll container like
+          // this one.
+          overflowX: 'hidden',
+        }}
       >
         {lists.length ? (
           lists.map((list) => {

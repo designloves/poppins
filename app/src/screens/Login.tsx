@@ -45,7 +45,7 @@ export function Login({
     return (
       <div
         style={{
-          padding: '24px 16px',
+          padding: '24px 16px calc(24px + env(safe-area-inset-bottom))',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -113,7 +113,7 @@ export function Login({
   return (
     <div
       style={{
-        padding: '24px 16px',
+        padding: '24px 16px calc(24px + env(safe-area-inset-bottom))',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

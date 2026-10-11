@@ -86,9 +86,23 @@ export function Paste({
           </Button>
         </div>
         <div
+          data-testid="paste-form-scroll-area"
           style={{
             flex: 1,
+            // Without this, a flex item defaults to min-height:auto — its
+            // content's own intrinsic size, not 0 — so a tall pasted block
+            // of text wouldn't scroll internally at all; it'd push the
+            // Avbryt/Sortera row below past the screen's own bottom edge
+            // instead, clipping its box-shadow where #screen's own
+            // overflow-y:auto cuts off (ink overflow like a hard
+            // box-shadow doesn't get its own extra scroll room there).
+            minHeight: 0,
             overflowY: 'auto',
+            // Without this, overflow-x computes to auto (not its own
+            // 'visible' default) once overflow-y is non-visible — see
+            // Lists.tsx for how that turns a few stray px of width into
+            // a real, swipeable horizontal scroll confined to this area.
+            overflowX: 'hidden',
             display: 'flex',
             flexDirection: 'column',
             gap: 18,
@@ -242,7 +256,21 @@ export function Paste({
           </select>
         </div>
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div
+        data-testid="paste-review-scroll-area"
+        style={{
+          flex: 1,
+          // See the same fix on the "paste" step above — needed here too
+          // so a long reviewed word list scrolls internally instead of
+          // pushing the Edit/Save row's shadow past the screen's edge.
+          minHeight: 0,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+        }}
+      >
         {pasteParsed.map((w, i) => {
           const comparative = w[comparativeKey(pastePair.from)] && w[comparativeKey(pastePair.to)]
           const superlative = w[superlativeKey(pastePair.from)] && w[superlativeKey(pastePair.to)]

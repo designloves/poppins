@@ -372,10 +372,17 @@ export function DressingRoom({
         >
           {sheetState === 'open' && (
             <div
+              data-testid="dressing-room-grid-scroll-area"
               style={{
                 flex: 1,
                 minHeight: 0,
                 overflowY: 'auto',
+                // Without this, overflow-x computes to auto (not its own
+                // 'visible' default) once overflow-y is non-visible — see
+                // the same fix on Lists.tsx for how that turns a few
+                // stray px of width into a real, swipeable horizontal
+                // scroll confined to this one area.
+                overflowX: 'hidden',
                 padding: `${ROW_TOP_PADDING}px ${ROW_SIDE_PADDING}px ${ROW_BOTTOM_PADDING}px`,
                 display: 'flex',
                 flexWrap: 'wrap',

@@ -29,7 +29,7 @@ export function Done({ result, avatar, uiLang, onHome, onPlayAgain }: DoneProps)
   return (
     <div
       style={{
-        padding: '24px 16px',
+        padding: '24px 16px calc(24px + env(safe-area-inset-bottom))',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -38,26 +38,33 @@ export function Done({ result, avatar, uiLang, onHome, onPlayAgain }: DoneProps)
         minHeight: '100%',
         justifyContent: 'center',
         position: 'relative',
-        overflow: 'hidden',
       }}
     >
-      {Array.from({ length: 24 }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            position: 'absolute',
-            top: -20,
-            left: `${(i * 37) % 100}%`,
-            animation: `greta-fall 3s ${(i * 80) % 1500}ms infinite linear`,
-          }}
-        >
-          <Confetti
-            size={10}
-            color={CONFETTI_COLORS[i % CONFETTI_COLORS.length]}
-            rotation={(i * 47) % 360}
-          />
-        </div>
-      ))}
+      {/* Its own clipped, click-through layer — not the whole screen's
+          container — so the falling confetti stays confined to the
+          screen's bounds without also clipping the real content below:
+          overflow:hidden on the shared container would cut off the star
+          badges' and buttons' own box-shadow (a hard edge, not a soft
+          blur) any time it bled past that container's edge. */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+        {Array.from({ length: 24 }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              top: -20,
+              left: `${(i * 37) % 100}%`,
+              animation: `greta-fall 3s ${(i * 80) % 1500}ms infinite linear`,
+            }}
+          >
+            <Confetti
+              size={10}
+              color={CONFETTI_COLORS[i % CONFETTI_COLORS.length]}
+              rotation={(i * 47) % 360}
+            />
+          </div>
+        ))}
+      </div>
 
       <Mascot size={150} mood="proud" />
 

@@ -48,7 +48,12 @@ export function Home({
   return (
     <div
       style={{
-        padding: '8px 16px 18px',
+        // The "Mina listor"/"Ny" row below is pinned flush to this
+        // container's own bottom edge (marginTop:'auto' on it, inside
+        // this flex column) — same as every other screen with a
+        // bottom-pinned action row, this needs the home-indicator safe
+        // area added on top of the flat gap, not just the flat gap alone.
+        padding: '8px 16px calc(18px + env(safe-area-inset-bottom))',
         display: 'flex',
         flexDirection: 'column',
         gap: 32,
