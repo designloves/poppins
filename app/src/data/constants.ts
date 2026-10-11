@@ -5,6 +5,15 @@ export type Word = Record<string, string>
 // regardless of where in the app the action was triggered from.
 export const APP_URL = 'https://designloves.github.io/poppins/'
 
+// Mirrors index.css's --paper. Needed as a literal JS value (not a
+// var(--paper) reference) for #frame's inline-style background-color
+// write in DressingRoom.tsx — Safari's chrome-tint DOM sampler reacts
+// reliably to a literal color written directly inline, the same way
+// useAppState.ts's avatar-tint effect writes body's background-color,
+// but not to an inline style that itself still points at a custom
+// property for its value.
+export const PAPER = '#f4f1e8'
+
 export interface WordList {
   id: string
   from: string

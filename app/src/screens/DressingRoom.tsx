@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AvatarImage } from '../components/AvatarImage'
 import { Coin } from '../components/Coin'
 import { ACCESSORIES, type Accessory } from '../data/accessories'
-import { FULL_BODY_AVATARS, type AvatarKey } from '../data/constants'
+import { FULL_BODY_AVATARS, PAPER, type AvatarKey } from '../data/constants'
 import { accessoryName, t, type UiLang } from '../data/i18n'
 import { ArrowBack, Check } from '../icons/icons'
 import { ACCESSORY_ICONS } from '../icons/accessoryIcons'
@@ -193,11 +193,15 @@ export function DressingRoom({
   // solid block instead of the sheet extending underneath. A direct
   // inline-style write, not a stylesheet rule change, is what Safari
   // actually reacts to live here — the same finding behind the avatar
-  // tint effect's own body.style.backgroundColor write in useAppState.ts.
+  // tint effect's own body.style.backgroundColor write in useAppState.ts,
+  // which is matched exactly below: a literal resolved color (PAPER),
+  // not a var(--paper) reference the sampler would still have to
+  // resolve through a custom property — a plausible reason this didn't
+  // reliably take effect live before.
   useEffect(() => {
     const frame = document.getElementById('frame')
     if (!frame) return
-    frame.style.backgroundColor = 'var(--paper)'
+    frame.style.backgroundColor = PAPER
     nudgeThemeColor()
     return () => {
       frame.style.backgroundColor = ''
