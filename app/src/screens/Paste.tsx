@@ -86,6 +86,7 @@ export function Paste({
           </Button>
         </div>
         <div
+          data-testid="paste-form-scroll-area"
           style={{
             flex: 1,
             // Without this, a flex item defaults to min-height:auto — its
@@ -97,6 +98,11 @@ export function Paste({
             // box-shadow doesn't get its own extra scroll room there).
             minHeight: 0,
             overflowY: 'auto',
+            // Without this, overflow-x computes to auto (not its own
+            // 'visible' default) once overflow-y is non-visible — see
+            // Lists.tsx for how that turns a few stray px of width into
+            // a real, swipeable horizontal scroll confined to this area.
+            overflowX: 'hidden',
             display: 'flex',
             flexDirection: 'column',
             gap: 18,
@@ -251,6 +257,7 @@ export function Paste({
         </div>
       </div>
       <div
+        data-testid="paste-review-scroll-area"
         style={{
           flex: 1,
           // See the same fix on the "paste" step above — needed here too
@@ -258,6 +265,7 @@ export function Paste({
           // pushing the Edit/Save row's shadow past the screen's edge.
           minHeight: 0,
           overflowY: 'auto',
+          overflowX: 'hidden',
           display: 'flex',
           flexDirection: 'column',
           gap: 6,

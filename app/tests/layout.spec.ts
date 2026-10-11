@@ -103,6 +103,47 @@ test('no horizontal scroll appears on any screen at a real phone width', async (
   await assertNoHorizontalOverflow()
 })
 
+// Regression test: once overflow-y is set to anything other than
+// 'visible', an unset overflow-x no longer defaults to 'visible' either —
+// it computes to 'auto' instead (the CSS Overflow spec forbids mixing
+// 'visible' on one axis with a non-visible value on the other). Any of
+// these inner scroll areas running even a few px wider than its own
+// container (scrollbar-gutter math, sub-pixel rounding) then became a
+// real, user-swipeable horizontal scroll confined to that one area — the
+// page-level check above can't catch it, since #screen's own
+// overflow-x:hidden clips the *document*, not a nested scroll container
+// like these.
+test('inner scroll areas never allow horizontal scrolling, even if overflow-y is active', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+
+  async function assertOverflowXHidden(testId: string) {
+    const overflowX = await page
+      .getByTestId(testId)
+      .evaluate((el) => getComputedStyle(el).overflowX)
+    expect(overflowX).toBe('hidden')
+  }
+
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Mina listor' }).click()
+  await assertOverflowXHidden('lists-scroll-area')
+
+  await page.getByRole('button', { name: 'Tillbaka' }).click()
+  await page.getByRole('button', { name: 'Ny' }).click()
+  await assertOverflowXHidden('paste-form-scroll-area')
+
+  await page.fill('#paste-name', 'Test')
+  await page.fill('#paste-text', 'ett = one')
+  await page.click('#paste-parse')
+  await assertOverflowXHidden('paste-review-scroll-area')
+
+  await page.goto('/')
+  await page.click('button[title="Garderoben"]')
+  await page.click('#dressing-room-sheet-handle')
+  await assertOverflowXHidden('dressing-room-grid-scroll-area')
+})
+
 // Regression test: a flex item defaults to min-height:auto (its content's
 // own intrinsic size), not 0 — so flex:1 + overflow-y:auto alone doesn't
 // actually scroll internally once the content is tall enough; it pushes

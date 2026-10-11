@@ -59,6 +59,7 @@ export function Lists({
         </Button>
       </div>
       <div
+        data-testid="lists-scroll-area"
         style={{
           display: 'flex',
           flexDirection: 'column',
@@ -73,6 +74,15 @@ export function Lists({
           // box-shadow doesn't get its own extra scroll room there).
           minHeight: 0,
           overflowY: 'auto',
+          // Without this, overflow-x computes to auto (not its own
+          // 'visible' default) once overflow-y is non-visible — turning
+          // a few stray px of width (scrollbar gutter math, sub-pixel
+          // rounding) into a real, swipeable horizontal scroll confined
+          // to this one area, invisible to a page-level overflow check
+          // since #screen's own overflow-x:hidden only clips at the
+          // document level, not inside a nested scroll container like
+          // this one.
+          overflowX: 'hidden',
         }}
       >
         {lists.length ? (
