@@ -83,6 +83,16 @@ export function Lists({
           // document level, not inside a nested scroll container like
           // this one.
           overflowX: 'hidden',
+          // The active card nudges 4px right (translateX below) as a
+          // selection affordance. That pushed it 4px past this
+          // container's own right edge, where the new overflow-x:hidden
+          // above hard-clipped it — flattening its right corner and
+          // border. Widening the clip box by 4px on each side (negative
+          // margin) while pulling the content back in by the same amount
+          // (matching padding) gives the nudge room without moving any
+          // card's resting position or reopening the real scroll bug.
+          margin: '0 -4px',
+          padding: '0 4px',
         }}
       >
         {lists.length ? (

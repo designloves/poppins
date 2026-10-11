@@ -186,6 +186,47 @@ test('many lists scroll internally, keeping "Add a new list" within the viewport
   await assertNoPageScroll(page)
 })
 
+// Regression test: the active list card nudges 4px right (translateX)
+// as a selection affordance. Once the scroll area above picked up its
+// own overflow-x:hidden, that nudge pushed the card 4px past the
+// container's own right edge, where it got hard-clipped — flattening
+// its right corner and border. The container now widens its own clip
+// box by 4px on each side (negative margin + matching padding) so the
+// nudge has room without moving any card's resting position.
+test("the active list card's selection nudge isn't clipped by the scroll area's own edge", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const lists = Array.from({ length: 3 }, (_, i) => ({
+      id: `list-${i}`,
+      from: 'sv',
+      to: 'en',
+      name: `Lista ${i}`,
+      color: 'rose',
+      words: [{ sv: 'ett', en: 'one' }],
+    }))
+    localStorage.setItem('poppins_settings_v1', JSON.stringify({ lists, activeListId: 'list-0' }))
+  })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Mina listor' }).click()
+
+  const { scrollArea, activeCard, inactiveCard } = await page.evaluate(() => {
+    const area = document.querySelector('[data-testid="lists-scroll-area"]')!
+    const cards = area.querySelectorAll(':scope > div')
+    return {
+      scrollArea: area.getBoundingClientRect(),
+      activeCard: cards[0].getBoundingClientRect(),
+      inactiveCard: cards[1].getBoundingClientRect(),
+    }
+  })
+
+  // The inactive card still rests flush at the area's visual left edge...
+  expect(inactiveCard.left).toBeCloseTo(scrollArea.left + 4, 0)
+  // ...while the active card's nudged-right edge stays within the
+  // container's own (widened) clip box, not flattened by it.
+  expect(activeCard.right).toBeLessThanOrEqual(scrollArea.right + 0.5)
+})
+
 // Regression test: overflow:hidden on the done screen's shared container
 // (there to keep the falling confetti animation from spilling past the
 // screen's bounds) was also clipping the star badges' and buttons' own
